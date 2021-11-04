@@ -100,3 +100,7 @@ func (self *router) PathPrefix(path string) *router {
 func (self *router) resetVariable() {
 	self.pathPrefixValue = ""
 }
+
+func (self *router) Test(path string) string {
+	return "TestOnly"
+}
