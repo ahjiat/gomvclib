@@ -78,15 +78,8 @@ func (self *router) RouteByController(path string, icontroller interface{}) {
 	self.Route(rc, icontroller)
 }
 func (self *router) GetRouter() *mux.Router { return self.muxRouter }
-func (self *router) AllowDomains(idomains interface{}) { 
-	switch idomains.(type) {
-		case string:
-			self.mrht.domains = []string{idomains.(string)}
-		case []string:
-			self.mrht.domains = idomains.([]string)
-		default:
-			errorLog("AllowDomains param not support, access string & []string only")
-	}
+func (self *router) AllowDomains(domains...string) { 
+	self.mrht.domains = domains
 }
 func (self *router) AllowAllDomains() { self.mrht.domains = []string{} }
 func (self *router) SupportParameters(in ...interface{}) {
