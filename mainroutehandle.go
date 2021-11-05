@@ -11,6 +11,7 @@ type direction struct {
 	post *http_method
 	get *http_method
 	action *string
+	viewBasePath string
 }
 type mainRouteHandlerType struct {
 	muxRouter *mux.Router
@@ -20,7 +21,8 @@ type mainRouteHandlerType struct {
 }
 func (self *mainRouteHandlerType) addToRoute(path string, icontroller interface{}, post http_method, get http_method, action string) {
 	storage_name := getRouteName()
-	self.storage[storage_name] = direction{&icontroller, &post, &get, &action}
+	self.storage[storage_name] = direction{
+		&icontroller,&post, &get, &action, getBaseViewPath(&icontroller)}
 	self.addMuxRoute(path, storage_name)
 }
 func (self *mainRouteHandlerType) addMuxRoute(path string, name string) {
@@ -45,6 +47,7 @@ func (self *mainRouteHandlerType) mainRouteHandler(w http.ResponseWriter, r *htt
 		v := reflect.New(va.Type().Elem())
 		v.Elem().FieldByName("Response").Set(reflect.ValueOf(interface{}(w)))
 		v.Elem().FieldByName("Request").Set(reflect.ValueOf(interface{}(r)))
+		v.Elem().FieldByName("ViewBasePath").SetString(store.viewBasePath)
 		method := v.MethodByName(*store.action);
 		if method.Type().NumIn() == 0 {
 			method.Call([]reflect.Value{})

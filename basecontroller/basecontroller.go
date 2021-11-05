@@ -8,6 +8,7 @@ import (
 type BaseController struct {
 	Response http.ResponseWriter
 	Request *http.Request
+	ViewBasePath string
 }
 func (self *BaseController) Echo(s string) {
 	self.Response.Write([]byte(s))

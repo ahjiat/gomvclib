@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var muxRouteCount int
@@ -62,4 +63,11 @@ func retrieveMethodParams(icontroller *interface{}, methodName string) (http_met
 		}
 	}
 	return getHttps, postHttps
+}
+func getBaseViewPath(icontroller *interface{}) string {
+	path := fmt.Sprintf("%T", *icontroller)
+	path = "view/" + path
+	path = strings.Replace(path, "*", "", 1)
+	path = strings.Replace(path, ".", "/", -1)
+	return path
 }
