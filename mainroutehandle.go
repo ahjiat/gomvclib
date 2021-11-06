@@ -13,12 +13,19 @@ type mainRouteHandlerType struct {
 }
 func (self *mainRouteHandlerType) addMuxRoute(path string, domains []string, methods []string) {
 	if(path == "") { return }
-	route := self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler)
-	for _, domain := range domains {
-		if(domain == "") { continue }
-		route.Host(domain)
+	if len(domains) == 0  && len(methods) == 0 {
+		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler)
+		return
 	}
-	if(len(methods) > 0) { route.Methods(methods...)  }
+	if len(domains) > 0 {
+		for _, domain := range domains {
+			if(domain == "") { continue }
+			route := self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Host(domain)
+			if(len(methods) > 0) { route.Methods(methods...)  }
+		}
+		return
+	}
+	if len(methods) > 0 { self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Methods(methods...)  }
 }
 func (self *mainRouteHandlerType) muxRouteExactly(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
 	return self.muxRouter.HandleFunc(path, f)
