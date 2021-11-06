@@ -6,13 +6,6 @@ import (
 	"strconv"
 )
 
-type direction struct { 
-	ptr *interface{}
-	post *http_method
-	get *http_method
-	action *string
-	viewBasePath string
-}
 type mainRouteHandlerType struct {
 	muxRouter *mux.Router
 	pt paramtype

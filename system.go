@@ -7,6 +7,19 @@ import (
 	"strings"
 )
 
+type RouteConfig struct {
+	Path   string
+	Action string
+}
+
+type direction struct { 
+	ptr *interface{}
+	post *http_method
+	get *http_method
+	action *string
+	viewBasePath string
+}
+
 type http_method map[string]string
 
 func errorLog(str string, msg ...interface{}) {

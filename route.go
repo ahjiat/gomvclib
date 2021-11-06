@@ -5,11 +5,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RouteConfig struct {
-	Path   string
-	Action string
-}
-
 type Route struct {
 	muxRouter *mux.Router
 	domains []string
