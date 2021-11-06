@@ -16,21 +16,20 @@ type direction struct {
 type mainRouteHandlerType struct {
 	muxRouter *mux.Router
 	pt paramtype
-	domains []string
 	storage map[string]direction
 }
-func (self *mainRouteHandlerType) addToRoute(path string, icontroller interface{}, post http_method, get http_method, action string) {
+func (self *mainRouteHandlerType) addToRoute(path string, icontroller interface{}, post http_method, get http_method, action string, domains []string) {
 	storage_name := getRouteName()
 	self.storage[storage_name] = direction{
 		&icontroller,&post, &get, &action, getBaseViewPath(&icontroller)}
-	self.addMuxRoute(path, storage_name)
+	self.addMuxRoute(path, storage_name, domains)
 }
-func (self *mainRouteHandlerType) addMuxRoute(path string, name string) {
-	if(len(self.domains) == 0) {
+func (self *mainRouteHandlerType) addMuxRoute(path string, name string, domains []string) {
+	if(len(domains) == 0) {
 		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Name(name)
 		return
 	}
-	for _, domain := range self.domains {
+	for _, domain := range domains {
 		if(domain == "") { continue }
 		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Name(name).Host(domain)
 	}
