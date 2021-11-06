@@ -59,7 +59,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 		handler := mainRouteHandlerType{
 			muxRouter:  self.muxRouter,
 			pt: self.pt,
-			store: direction{ &icontroller, &post, &get, &action, ""},
+			store: direction{ &icontroller, &post, &get, &action, getBaseViewPath(&icontroller)},
 		}
 		handler.addMuxRoute(path, self.domains)
 	}
