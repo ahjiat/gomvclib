@@ -1,5 +1,4 @@
 package Web
-
 import (
 	"github.com/ahjiat/gomvclib/basecontroller"
 	"strings"
@@ -15,7 +14,7 @@ type Route struct {
 	muxRouter *mux.Router
 	domains []string
 	pathPrefix string
-	mrht mainRouteHandlerType
+	pt paramtype
 }
 func (self *Route) AnyDomain() *Route {
 	return self.Domains([]string{}...)
@@ -32,8 +31,8 @@ func (self *Route) PathPrefix(path string) *Route {
 }
 func (self *Route) SupportParameters(in ...interface{}) *Route {
 	newRoute := *self
-	newRoute.mrht.pt.Process(in...)
-	//newRoute.mrht.pt.display()
+	newRoute.pt = paramtype{}
+	newRoute.pt.Process(in...)
 	return &newRoute
 }
 func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
@@ -57,7 +56,12 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 			errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
 		}
 		get, post := retrieveMethodParams(&icontroller, action)
-		self.mrht.addToRoute(path, icontroller, post, get, action, self.domains)
+		handler := mainRouteHandlerType{
+			muxRouter:  self.muxRouter,
+			pt: self.pt,
+			store: direction{ &icontroller, &post, &get, &action, ""},
+		}
+		handler.addMuxRoute(path, self.domains)
 	}
 }
 func (self *Route) RouteByController(path string, icontroller interface{}) {

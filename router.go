@@ -6,14 +6,11 @@ import (
 
 func Router() (*Route, *mux.Router) {
 	muxRouter := mux.NewRouter()
-	route := Route {
-		muxRouter: muxRouter,
-		mrht: mainRouteHandlerType{muxRouter: muxRouter, pt: paramtype{}, storage: map[string]direction{}},
-	}
+	route := Route { muxRouter: muxRouter, pt: paramtype{} }
+	systemInformation := mainRouteHandlerType{ muxRouter:  muxRouter }
 	sys := systeminfo{muxRouter}
-	route.mrht.muxRouteExactly("/system/information", sys.pageShowRouteInfoHandler)
+	systemInformation.muxRouteExactly("/system/information", sys.pageShowRouteInfoHandler)
 	return &route, muxRouter
-
 }
 
 

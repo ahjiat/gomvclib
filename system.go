@@ -4,18 +4,11 @@ import (
 	"reflect"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
-var muxRouteCount int
 type http_method map[string]string
 
-
-func getRouteName() string {
-	muxRouteCount++
-	return strconv.Itoa(muxRouteCount)
-}
 func errorLog(str string, msg ...interface{}) {
 	fmt.Fprintf(os.Stderr, "ERROR => " + str + " ", msg...)
 	os.Exit(1)
