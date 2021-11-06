@@ -11,15 +11,14 @@ type mainRouteHandlerType struct {
 	pt paramtype
 	store direction
 }
-func (self *mainRouteHandlerType) addMuxRoute(path string, domains []string) {
-	if(len(domains) == 0) {
-		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler)
-		return
-	}
+func (self *mainRouteHandlerType) addMuxRoute(path string, domains []string, methods []string) {
+	if(path == "") { return }
+	route := self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler)
 	for _, domain := range domains {
 		if(domain == "") { continue }
-		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Host(domain)
+		route.Host(domain)
 	}
+	if(len(methods) > 0) { route.Methods(methods...)  }
 }
 func (self *mainRouteHandlerType) muxRouteExactly(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
 	return self.muxRouter.HandleFunc(path, f)

@@ -8,6 +8,7 @@ import (
 type Route struct {
 	muxRouter *mux.Router
 	domains []string
+	methods []string
 	pathPrefix string
 	pt paramtype
 }
@@ -22,6 +23,11 @@ func (self *Route) Domains(domains...string) *Route {
 func (self *Route) PathPrefix(path string) *Route {
 	newRoute := *self
 	newRoute.pathPrefix = self.pathPrefix + path
+	return &newRoute
+}
+func (self *Route) Methods(methods...string) *Route {
+	newRoute := *self
+	newRoute.methods = methods
 	return &newRoute
 }
 func (self *Route) SupportParameters(in ...interface{}) *Route {
@@ -56,7 +62,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 			pt: self.pt,
 			store: direction{ &icontroller, &post, &get, &action, getBaseViewPath(&icontroller)},
 		}
-		handler.addMuxRoute(path, self.domains)
+		handler.addMuxRoute(path, self.domains, self.methods)
 	}
 }
 func (self *Route) RouteByController(path string, icontroller interface{}) {
