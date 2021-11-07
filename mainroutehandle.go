@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type mainRouteHandlerType struct {
@@ -71,6 +72,14 @@ func (self *mainRouteHandlerType) setmainRouteHandlerField(mtd string, name *str
 			fields.FieldByName(mtd+*name).SetInt(v)
 		case "string":
 			fields.FieldByName(mtd+*name).SetString(*val)
+		case "float64":
+			v, _ := strconv.ParseFloat(*val, 64)
+			fields.FieldByName(mtd+*name).SetFloat(v)
+		case "float32":
+			v, _ := strconv.ParseFloat(*val, 32)
+			fields.FieldByName(mtd+*name).SetFloat(v)
+		case "bool":
+			fields.FieldByName(mtd+*name).SetBool(strings.ToLower(*val) == "true")
 		default:
 			st, ok := self.pt[*t];
 			if !ok { return }
