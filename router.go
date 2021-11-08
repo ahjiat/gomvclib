@@ -10,7 +10,7 @@ var sysCurPath__ string
 func Router() (*Route, *mux.Router) {
 	muxRouter := mux.NewRouter()
 	route := Route { muxRouter: muxRouter, pt: paramtype{} }
-	systemInformation := mainRouteHandlerType{ muxRouter:  muxRouter }
+	systemInformation := RouteHandler{ muxRouter:  muxRouter }
 	sys := systeminfo{muxRouter}
 	systemInformation.muxRouteExactly("/system/information", sys.pageShowRouteInfoHandler)
 

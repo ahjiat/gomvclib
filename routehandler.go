@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-type mainRouteHandlerType struct {
+type RouteHandler struct {
 	muxRouter *mux.Router
 	pt paramtype
 	store direction
 }
-func (self *mainRouteHandlerType) addMuxRoute(path string, domains []string, methods []string) {
+func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []string) {
 	if(path == "") { return }
 	if len(domains) == 0  && len(methods) == 0 {
 		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler)
@@ -28,13 +28,13 @@ func (self *mainRouteHandlerType) addMuxRoute(path string, domains []string, met
 	}
 	if len(methods) > 0 { self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Methods(methods...)  }
 }
-func (self *mainRouteHandlerType) muxRouteExactly(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
+func (self *RouteHandler) muxRouteExactly(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
 	return self.muxRouter.HandleFunc(path, f)
 }
-func (self *mainRouteHandlerType) muxRouteIgnoreSlash(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
+func (self *RouteHandler) muxRouteIgnoreSlash(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
 	return self.muxRouteExactly(path+"{n:\\/?}", f)
 }
-func (self *mainRouteHandlerType) mainRouteHandler(w http.ResponseWriter, r *http.Request) {
+func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Request) {
 	store := self.store
 	va := reflect.ValueOf(*store.ptr)
 	v := reflect.New(va.Type().Elem())
@@ -66,7 +66,7 @@ func (self *mainRouteHandlerType) mainRouteHandler(w http.ResponseWriter, r *htt
 	}
 	method.Call([]reflect.Value{fields})
 }
-func (self *mainRouteHandlerType) setmainRouteHandlerField(mtd string, name *string, val *string, fields *reflect.Value, t *string) {
+func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val *string, fields *reflect.Value, t *string) {
 	switch *t {
 		case "int":
 			v, _ := strconv.ParseInt(*val, 10, 64)

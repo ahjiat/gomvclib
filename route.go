@@ -80,7 +80,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 			errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
 		}
 		get, post := retrieveMethodParams(&icontroller, action)
-		handler := mainRouteHandlerType{
+		handler := RouteHandler{
 			muxRouter:  self.muxRouter,
 			pt: self.pt,
 			store: direction{
