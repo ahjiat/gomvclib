@@ -70,10 +70,11 @@ func retrieveMethodParams(icontroller *interface{}, methodName string) (http_met
 	}
 	return getHttps, postHttps
 }
-func getBaseViewPath(icontroller *interface{}) string {
+func getBaseViewPath(icontroller *interface{}, controllerName string, viewName string) string {
 	path := fmt.Sprintf("%T", *icontroller)
-	path = "view/" + path
 	path = strings.Replace(path, "*", "", 1)
 	path = strings.Replace(path, ".", "/", -1)
+	path = strings.TrimPrefix(path, controllerName)
+	path = sysCurPath__ + "/" + viewName + path
 	return path
 }

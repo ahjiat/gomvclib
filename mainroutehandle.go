@@ -41,6 +41,7 @@ func (self *mainRouteHandlerType) mainRouteHandler(w http.ResponseWriter, r *htt
 	v.Elem().FieldByName("Response").Set(reflect.ValueOf(interface{}(w)))
 	v.Elem().FieldByName("Request").Set(reflect.ValueOf(interface{}(r)))
 	v.Elem().FieldByName("ViewBasePath").SetString(store.viewBasePath)
+	v.Elem().FieldByName("ActionName").SetString(*store.action)
 	method := v.MethodByName(*store.action);
 	if method.Type().NumIn() == 0 {
 		method.Call([]reflect.Value{})

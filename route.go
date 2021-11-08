@@ -3,6 +3,7 @@ import (
 	"github.com/ahjiat/gomvclib/basecontroller"
 	"strings"
 	"github.com/gorilla/mux"
+	"os"
 )
 
 type Route struct {
@@ -11,6 +12,28 @@ type Route struct {
 	methods []string
 	pathPrefix string
 	pt paramtype
+	viewDirName string
+	viewDirPath string
+	controllerDirName string
+	controllerDirPath string
+}
+func (self *Route) SetViewDir(path string) *Route {
+	name := path
+	path = sysCurPath__ + "/" + path 
+	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetViewPath directory [" + path + "] not exist") }
+	newRoute := *self
+	newRoute.viewDirPath = path
+	newRoute.viewDirName = name
+	return &newRoute
+}
+func (self *Route) SetControllerDir(path string) *Route {
+	name := path
+	path = sysCurPath__ + "/" + path 
+	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetControllerPath directory [" + path + "] not exist") }
+	newRoute := *self
+	newRoute.controllerDirPath = path
+	newRoute.controllerDirName = name
+	return &newRoute
 }
 func (self *Route) AnyDomain() *Route {
 	return self.Domains([]string{}...)
@@ -60,7 +83,8 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 		handler := mainRouteHandlerType{
 			muxRouter:  self.muxRouter,
 			pt: self.pt,
-			store: direction{ &icontroller, &post, &get, &action, getBaseViewPath(&icontroller)},
+			store: direction{
+				&icontroller, &post, &get, &action, getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName)},
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
