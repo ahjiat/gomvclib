@@ -49,7 +49,6 @@ func (self *BaseController) View(fileName string) {
 		if err != nil { panic(err) }
 		template, err = self.Templates.New(fileName).Parse(string(dat))
 		if err != nil { panic(err) }
-		fmt.Println("\n ===== CRETED ==== \n")
 	}
 	err := template.Execute(self.Response, nil)
 	if err != nil { panic(err) }
