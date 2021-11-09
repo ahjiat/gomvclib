@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"html/template"
+	"github.com/ahjiat/gomvclib/global"
 )
 
 type RouteConfig struct {
@@ -18,6 +20,7 @@ type direction struct {
 	get *http_method
 	action *string
 	viewBasePath string
+	templates *template.Template
 }
 
 type http_method map[string]string
@@ -75,6 +78,6 @@ func getBaseViewPath(icontroller *interface{}, controllerName string, viewName s
 	path = strings.Replace(path, "*", "", 1)
 	path = strings.Replace(path, ".", "/", -1)
 	path = strings.TrimPrefix(path, controllerName)
-	path = sysCurPath__ + "/" + viewName + path
+	path = global.SysPath + "/" + viewName + path
 	return path
 }

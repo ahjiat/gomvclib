@@ -10,6 +10,10 @@ import (
 type RouteHandler struct {
 	muxRouter *mux.Router
 	pt paramtype
+	viewDirName string
+	viewDirPath string
+	controllerDirName string
+	controllerDirPath string
 	store direction
 }
 func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []string) {
@@ -42,6 +46,8 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 	v.Elem().FieldByName("Request").Set(reflect.ValueOf(interface{}(r)))
 	v.Elem().FieldByName("ViewBasePath").SetString(store.viewBasePath)
 	v.Elem().FieldByName("ActionName").SetString(*store.action)
+	v.Elem().FieldByName("Templates").Set(reflect.ValueOf(interface{}(store.templates)))
+	v.Elem().FieldByName("ViewRootPath").Set(reflect.ValueOf(interface{}(self.viewDirPath)))
 	method := v.MethodByName(*store.action);
 	if method.Type().NumIn() == 0 {
 		method.Call([]reflect.Value{})

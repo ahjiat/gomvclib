@@ -1,9 +1,11 @@
 package Web
 import (
 	"github.com/ahjiat/gomvclib/basecontroller"
+	"github.com/ahjiat/gomvclib/global"
 	"strings"
 	"github.com/gorilla/mux"
 	"os"
+	"html/template"
 )
 
 type Route struct {
@@ -19,7 +21,7 @@ type Route struct {
 }
 func (self *Route) SetViewDir(path string) *Route {
 	name := path
-	path = sysCurPath__ + "/" + path 
+	path = global.SysPath + "/" + path 
 	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetViewPath directory [" + path + "] not exist") }
 	newRoute := *self
 	newRoute.viewDirPath = path
@@ -28,7 +30,7 @@ func (self *Route) SetViewDir(path string) *Route {
 }
 func (self *Route) SetControllerDir(path string) *Route {
 	name := path
-	path = sysCurPath__ + "/" + path 
+	path = global.SysPath + "/" + path 
 	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetControllerPath directory [" + path + "] not exist") }
 	newRoute := *self
 	newRoute.controllerDirPath = path
@@ -83,8 +85,14 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 		handler := RouteHandler{
 			muxRouter:  self.muxRouter,
 			pt: self.pt,
+			viewDirName: self.viewDirName,
+			viewDirPath: self.viewDirPath,
+			controllerDirName: self.controllerDirName,
+			controllerDirPath: self.controllerDirPath,
 			store: direction{
-				&icontroller, &post, &get, &action, getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName)},
+				&icontroller, &post, &get, &action,
+				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
+				template.New("")},
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}

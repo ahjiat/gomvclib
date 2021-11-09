@@ -2,10 +2,9 @@ package Web
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/ahjiat/gomvclib/global"
 	"os"
 )
-
-var sysCurPath__ string
 
 func Router() (*Route, *mux.Router) {
 	muxRouter := mux.NewRouter()
@@ -14,10 +13,10 @@ func Router() (*Route, *mux.Router) {
 	sys := systeminfo{muxRouter}
 	systemInformation.muxRouteExactly("/system/information", sys.pageShowRouteInfoHandler)
 
-	if sysCurPath__ == "" {
+	if global.SysPath == "" {
 		curPath, err := os.Getwd(); 
 		if err != nil { panic(err) }
-		sysCurPath__ = curPath
+		global.SysPath = curPath
 	}
 	return &route, muxRouter
 }
