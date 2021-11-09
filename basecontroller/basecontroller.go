@@ -25,30 +25,34 @@ func (self *BaseController) GetUrlVar(s string) string {
 	return mux.Vars(self.Request)[s]
 }
 func (self *BaseController) View(fileName string) {
-	var viewFile string
-	if fileName == "" {
-		viewFile = self.ViewBasePath + "/" + self.ActionName + ".html"
+	var file string
+	if strings.HasPrefix(fileName, "/") {
+		file = self.ViewRootPath
 	} else {
-		viewFile = self.ViewBasePath + "/" + fileName
+		file = self.ViewBasePath + "/"
 	}
+	if fileName == "" {
+		fileName = self.ActionName + ".html"
+	}
+	file += fileName
 
-	if file, _ := filepath.Abs(viewFile); !strings.HasPrefix(file, self.ViewRootPath) {
+	if absfile, _ := filepath.Abs(file); !strings.HasPrefix(absfile, self.ViewRootPath) {
 		panic(fmt.Sprintf("filename %s must within %s ", fileName, self.ViewRootPath))
 	}
-	if _, err := os.Stat(viewFile); err != nil {
+	if _, err := os.Stat(file); err != nil {
 		panic(err)
 	}
 
-	/*
-	template := self.Templates.Lookup(viewFile)
+	template := self.Templates.Lookup(fileName)
 	if template == nil {
-		if _, err := os.Stat(viewFile); err != nil { panic(err) }
-		tt1, err := self.Templates.New(viewFile).ParseFiles(viewFile)
+		dat, err := os.ReadFile(file)
 		if err != nil { panic(err) }
-		template = tt1
+		template, err = self.Templates.New(fileName).Parse(string(dat))
+		if err != nil { panic(err) }
+		fmt.Println("\n ===== CRETED ==== \n")
 	}
-	*/
-
+	err := template.Execute(self.Response, nil)
+	if err != nil { panic(err) }
 	/*
 	t1, err := self.Templates.New("Info.html").ParseFiles("/var/www/go/webserver/gomvc/view/Info/Info.html")
 	err = t1.Execute(self.Response, nil)
