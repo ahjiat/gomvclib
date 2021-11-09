@@ -37,9 +37,6 @@ func (self *Route) SetControllerDir(path string) *Route {
 	newRoute.controllerDirName = name
 	return &newRoute
 }
-func (self *Route) AnyDomain() *Route {
-	return self.Domains([]string{}...)
-}
 func (self *Route) Domains(domains...string) *Route {
 	newRoute := *self
 	newRoute.domains = domains
