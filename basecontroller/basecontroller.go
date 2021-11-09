@@ -17,6 +17,7 @@ type BaseController struct {
 	ActionName string
 	Templates *template.Template
 	ViewRootPath string
+	ViewBag interface{}
 }
 func (self *BaseController) Echo(s string) {
 	self.Response.Write([]byte(s))
@@ -24,8 +25,9 @@ func (self *BaseController) Echo(s string) {
 func (self *BaseController) GetUrlVar(s string) string {
 	return mux.Vars(self.Request)[s]
 }
-func (self *BaseController) View(fileName string) {
-	var file string
+func (self *BaseController) View(fileNames... string) {
+	var file, fileName string
+	if len(fileNames) != 0 { fileName = fileNames[0] }
 	if strings.HasPrefix(fileName, "/") {
 		file = self.ViewRootPath
 	} else {
@@ -50,22 +52,6 @@ func (self *BaseController) View(fileName string) {
 		template, err = self.Templates.New(fileName).Parse(string(dat))
 		if err != nil { panic(err) }
 	}
-	err := template.Execute(self.Response, nil)
+	err := template.Execute(self.Response, self.ViewBag)
 	if err != nil { panic(err) }
-	/*
-	t1, err := self.Templates.New("Info.html").ParseFiles("/var/www/go/webserver/gomvc/view/Info/Info.html")
-	err = t1.Execute(self.Response, nil)
-	if err != nil { panic(err) }
-	*/
-
-	/*
-	t1, err := template.ParseFiles("/var/www/go/webserver/gomvc/view/Info/Info.html")
-	err = t1.Execute(self.Response, nil)
-	if err != nil { panic(err) }
-	*/
-
-	/*
-	a, _ := filepath.Abs("/var/www/go/webserver/gomvclib/../../")
-	self.Echo(a + "\n")
-	*/
 }
