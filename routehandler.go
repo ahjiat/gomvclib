@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"unsafe"
 )
 
 type RouteHandler struct {
@@ -53,6 +54,11 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 	v.Elem().FieldByName("ActionName").SetString(*store.action)
 	v.Elem().FieldByName("Templates").Set(reflect.ValueOf(interface{}(store.templates)))
 	v.Elem().FieldByName("ViewRootPath").Set(reflect.ValueOf(interface{}(self.viewDirPath)))
+
+	//field := v.Elem().FieldByName("ViewRootPath"); _ = field
+    //reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.ValueOf(interface{}(self.viewDirPath)))
+    //reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().SetString(store.viewBasePath)
+
 	method := v.MethodByName(*store.action);
 	if method.Type().NumIn() == 0 {
 		method.Call([]reflect.Value{})
