@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"github.com/ahjiat/gomvclib/basecontroller"
 )
 
 type RouteHandler struct {
@@ -47,12 +48,25 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 	store := self.store
 	va := reflect.ValueOf(*store.ptr)
 	v := reflect.New(va.Type().Elem())
+
+	basecontainer := basecontroller.BaseControllerContainer {
+		Response: w,
+		Request: r,
+		ViewBasePath: store.viewBasePath,
+		ActionName: *store.action,
+		Templates: store.templates,
+		ViewRootPath: self.viewDirPath,
+	}
+	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(basecontainer)))
+
+	/*
 	v.Elem().FieldByName("Response").Set(reflect.ValueOf(interface{}(w)))
 	v.Elem().FieldByName("Request").Set(reflect.ValueOf(interface{}(r)))
 	v.Elem().FieldByName("ViewBasePath").SetString(store.viewBasePath)
 	v.Elem().FieldByName("ActionName").SetString(*store.action)
 	v.Elem().FieldByName("Templates").Set(reflect.ValueOf(interface{}(store.templates)))
 	v.Elem().FieldByName("ViewRootPath").Set(reflect.ValueOf(interface{}(self.viewDirPath)))
+	*/
 
 	//field := v.Elem().FieldByName("ViewRootPath"); _ = field
     //reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.ValueOf(interface{}(self.viewDirPath)))

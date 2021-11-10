@@ -75,7 +75,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 		if !isMethodExist(&icontroller, action) {
 			errorLog("Web.RouteConfig, path:%s controller:%T action:%s not found! ", path, icontroller, action)
 		}
-		if !isFieldExist(&icontroller, "Response") || !isFieldExist(&icontroller, "Request") {
+		if ! isFieldExist(&icontroller, "Base") {
 			errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
 		}
 		get, post := retrieveMethodParams(&icontroller, action)
@@ -95,7 +95,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 	}
 }
 func (self *Route) RouteByController(path string, icontroller interface{}) {
-	if !isFieldExist(&icontroller, "Response") || !isFieldExist(&icontroller, "Request") {
+	if ! isFieldExist(&icontroller, "Base") {
 		errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
 	}
 	baseMethods := listAllMethods(new(basecontroller.BaseController))
