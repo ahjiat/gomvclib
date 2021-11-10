@@ -18,19 +18,24 @@ type RouteHandler struct {
 }
 func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []string) {
 	if(path == "") { return }
-	if len(domains) == 0  && len(methods) == 0 {
-		self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler)
-		return
+	var routes []*mux.Route
+
+	for _, domain := range domains {
+		if(domain == "") { continue }
+		routes = append(routes, self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Host(domain))
 	}
-	if len(domains) > 0 {
-		for _, domain := range domains {
-			if(domain == "") { continue }
-			route := self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Host(domain)
-			if(len(methods) > 0) { route.Methods(methods...)  }
+
+	if len(methods) > 0 {
+		if len(routes) > 0 {
+			for _, route := range routes {
+				route.Methods(methods...)
+			}
+		} else {
+			routes = append(routes, self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Methods(methods...))
 		}
-		return
 	}
-	if len(methods) > 0 { self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Methods(methods...)  }
+
+	if len(routes) == 0 { self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler) }
 }
 func (self *RouteHandler) muxRouteExactly(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
 	return self.muxRouter.HandleFunc(path, f)
