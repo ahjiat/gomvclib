@@ -1,3 +1,3 @@
 package basecontroller
 
-type BaseController struct { Base BaseControllerContainer }
+type BaseController struct { Base *BaseControllerContainer }

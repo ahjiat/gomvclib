@@ -49,15 +49,14 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 	va := reflect.ValueOf(*store.ptr)
 	v := reflect.New(va.Type().Elem())
 
-	basecontainer := basecontroller.BaseControllerContainer {
+	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(&basecontroller.BaseControllerContainer {
 		Response: w,
 		Request: r,
 		ViewBasePath: store.viewBasePath,
 		ActionName: *store.action,
 		Templates: store.templates,
 		ViewRootPath: self.viewDirPath,
-	}
-	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(basecontainer)))
+	})))
 
 	/*
 	v.Elem().FieldByName("Response").Set(reflect.ValueOf(interface{}(w)))
