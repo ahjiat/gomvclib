@@ -58,7 +58,7 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 	err := template.Execute(self.Response, self.ViewBag)
 	if err != nil { panic(err) }
 }
-func (self *BaseControllerContainer) Next(args... interface{}) {
+func (self *BaseControllerContainer) RouteNext(args... interface{}) {
 	self.NeedNext = true
 	self.OutChainArgs = args
 }
