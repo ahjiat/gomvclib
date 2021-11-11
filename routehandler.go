@@ -8,14 +8,19 @@ import (
 	"github.com/ahjiat/gomvclib/basecontroller"
 )
 
-type RouteHandler struct {
-	muxRouter *mux.Router
+type RouteHandle struct {
 	pt paramtype
 	viewDirName string
 	viewDirPath string
 	controllerDirName string
 	controllerDirPath string
 	store direction
+}
+
+type RouteHandler struct {
+	muxRouter *mux.Router
+	mainHandle *RouteHandle
+	middlewareHandle []*RouteHandle
 }
 func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []string) {
 	if(path == "") { return }
@@ -45,27 +50,30 @@ func (self *RouteHandler) muxRouteIgnoreSlash(path string, f func (http.Response
 	return self.muxRouteExactly(path+"{n:\\/?}", f)
 }
 func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Request) {
-	store := self.store
+	var args []interface{}
+	var ok bool = true
+	for i, _ := range self.middlewareHandle {
+		args, ok = self.callHandle(w, r, self.middlewareHandle[i], args)
+		if ! ok  { return }
+	}
+	self.callHandle(w, r, self.mainHandle, args)
+}
+
+func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, handle *RouteHandle, chainArgs []interface{}) ([]interface{}, bool) {
+	store := handle.store
 	va := reflect.ValueOf(*store.ptr)
 	v := reflect.New(va.Type().Elem())
 
-	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(&basecontroller.BaseControllerContainer {
+	instance := &basecontroller.BaseControllerContainer {
 		Response: w,
 		Request: r,
 		ViewBasePath: store.viewBasePath,
 		ActionName: *store.action,
 		Templates: store.templates,
-		ViewRootPath: self.viewDirPath,
-	})))
-
-	/*
-	v.Elem().FieldByName("Response").Set(reflect.ValueOf(interface{}(w)))
-	v.Elem().FieldByName("Request").Set(reflect.ValueOf(interface{}(r)))
-	v.Elem().FieldByName("ViewBasePath").SetString(store.viewBasePath)
-	v.Elem().FieldByName("ActionName").SetString(*store.action)
-	v.Elem().FieldByName("Templates").Set(reflect.ValueOf(interface{}(store.templates)))
-	v.Elem().FieldByName("ViewRootPath").Set(reflect.ValueOf(interface{}(self.viewDirPath)))
-	*/
+		ViewRootPath: handle.viewDirPath,
+		InChainArgs: chainArgs,
+	}
+	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(instance)))
 
 	//field := v.Elem().FieldByName("ViewRootPath"); _ = field
     //reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.ValueOf(interface{}(self.viewDirPath)))
@@ -74,7 +82,7 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 	method := v.MethodByName(*store.action);
 	if method.Type().NumIn() == 0 {
 		method.Call([]reflect.Value{})
-		return
+		return instance.OutChainArgs, instance.NeedNext
 	}
 	paramt := method.Type().In(0)
 	fields := reflect.New(paramt).Elem()
@@ -82,7 +90,7 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 		for name, t := range *store.get {
 			val := r.URL.Query().Get(name)
 			if val == "" { continue }
-			self.setmainRouteHandlerField("GET_", &name, &val, &fields, &t)
+			self.setmainRouteHandlerField("GET_", &name, &val, &fields, &t, handle.pt)
 		}
 	}
 	if len(*store.post) != 0 {
@@ -90,12 +98,14 @@ func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Reques
 		for name, t := range *store.post {
 			val := r.PostFormValue(name)
 			if val == "" { continue }
-			self.setmainRouteHandlerField("POST_", &name, &val, &fields, &t)
+			self.setmainRouteHandlerField("POST_", &name, &val, &fields, &t, handle.pt)
 		}
 	}
 	method.Call([]reflect.Value{fields})
+	return instance.OutChainArgs, instance.NeedNext
 }
-func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val *string, fields *reflect.Value, t *string) {
+
+func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val *string, fields *reflect.Value, t *string, pt paramtype) {
 	switch *t {
 		case "int":
 			v, _ := strconv.ParseInt(*val, 10, 64)
@@ -111,7 +121,7 @@ func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val
 		case "bool":
 			fields.FieldByName(mtd+*name).SetBool(strings.ToLower(*val) == "true")
 		default:
-			st, ok := self.pt[*t];
+			st, ok := pt[*t];
 			if !ok { return }
 			va := reflect.ValueOf(*st.iparam)
 			v := reflect.New(va.Type().Elem());

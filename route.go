@@ -18,6 +18,7 @@ type Route struct {
 	viewDirPath string
 	controllerDirName string
 	controllerDirPath string
+	routeChainConfig []RouteChainConfig
 }
 func (self *Route) SetViewDir(path string) *Route {
 	name := path
@@ -58,6 +59,28 @@ func (self *Route) SupportParameters(in ...interface{}) *Route {
 	newRoute.pt.Process(in...)
 	return &newRoute
 }
+func (self *Route) RouteChain(rc interface{}) *Route {
+	newRoute := *self
+	var rcc  []RouteChainConfig
+	switch rc.(type) {
+		case RouteChainConfig:
+			rcc = []RouteChainConfig{rc.(RouteChainConfig)}
+		case []RouteChainConfig:
+			rcc = rc.([]RouteChainConfig)
+		default:
+			errorLog("web.RouteChain: parameters not support %T", rc)
+	}
+	for _, config := range rcc {
+		if ! isMethodExist(&config.Controller, config.Action) {
+			errorLog("web.RouteChain, Controller:%T Action:[%s] not found!", config.Controller, config.Action)
+		}
+		if ! isFieldExist(&config.Controller, "Base") {
+			errorLog("web.RouteChain, controller:%T missing [BaseController] ", config.Controller)
+		}
+		newRoute.routeChainConfig = append(self.routeChainConfig, config)
+	}
+	return &newRoute
+}
 func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 	var rc []RouteConfig
 	switch routeConfig.(type) {
@@ -72,24 +95,12 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 	for _, row := range rc {
 		path := self.pathPrefix + row.Path
 		action := row.Action
-		if !isMethodExist(&icontroller, action) {
-			errorLog("Web.RouteConfig, path:%s controller:%T action:%s not found! ", path, icontroller, action)
-		}
-		if ! isFieldExist(&icontroller, "Base") {
-			errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
-		}
-		get, post := retrieveMethodParams(&icontroller, action)
 		handler := RouteHandler{
 			muxRouter:  self.muxRouter,
-			pt: self.pt,
-			viewDirName: self.viewDirName,
-			viewDirPath: self.viewDirPath,
-			controllerDirName: self.controllerDirName,
-			controllerDirPath: self.controllerDirPath,
-			store: direction{
-				&icontroller, &post, &get, &action,
-				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
-				template.New("")},
+			mainHandle: self.createHandle(&action, icontroller),
+		}
+		for _, config := range self.routeChainConfig {
+			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller))
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
@@ -113,4 +124,24 @@ func (self *Route) RouteByController(path string, icontroller interface{}) {
 		rc = append(rc, RouteConfig{Path: lowcase, Action: name})
 	}
 	self.Route(rc, icontroller)
+}
+func (self *Route) createHandle(action *string, icontroller interface{}) *RouteHandle {
+		if !isMethodExist(&icontroller, *action) {
+			errorLog("Web.RouteConfig, controller:%T action:%s not found! ", icontroller, *action)
+		}
+		if ! isFieldExist(&icontroller, "Base") {
+			errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
+		}
+		get, post := retrieveMethodParams(&icontroller, *action)
+		return &RouteHandle {
+			pt: self.pt,
+			viewDirName: self.viewDirName,
+			viewDirPath: self.viewDirPath,
+			controllerDirName: self.controllerDirName,
+			controllerDirPath: self.controllerDirPath,
+			store: direction{
+				&icontroller, &post, &get, action,
+				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
+				template.New("")},
+		}
 }

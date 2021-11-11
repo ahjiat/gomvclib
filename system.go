@@ -13,8 +13,12 @@ type RouteConfig struct {
 	Path   string
 	Action string
 }
+type RouteChainConfig struct {
+	Action string
+	Controller interface{}
+}
 
-type direction struct { 
+type direction struct {
 	ptr *interface{}
 	post *http_method
 	get *http_method

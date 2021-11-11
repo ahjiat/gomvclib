@@ -18,6 +18,9 @@ type BaseControllerContainer struct {
 	Templates *template.Template
 	ViewRootPath string
 	ViewBag interface{}
+	InChainArgs []interface{}
+	NeedNext bool
+	OutChainArgs []interface{}
 }
 func (self *BaseControllerContainer) Echo(s string) {
 	self.Response.Write([]byte(s))
@@ -54,4 +57,8 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 	}
 	err := template.Execute(self.Response, self.ViewBag)
 	if err != nil { panic(err) }
+}
+func (self *BaseControllerContainer) Next(args... interface{}) {
+	self.NeedNext = true
+	self.OutChainArgs = args
 }
