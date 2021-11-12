@@ -110,8 +110,13 @@ func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val
 		case "int":
 			v, _ := strconv.ParseInt(*val, 10, 64)
 			fields.FieldByName(mtd+*name).SetInt(v)
+		case "*int":
+			v1, _ := strconv.ParseInt(*val, 10, 64); v := int(v1)
+			fields.FieldByName(mtd+*name).Set(reflect.ValueOf(&v))
 		case "string":
 			fields.FieldByName(mtd+*name).SetString(*val)
+		case "*string":
+			fields.FieldByName(mtd+*name).Set(reflect.ValueOf(val))
 		case "float64":
 			v, _ := strconv.ParseFloat(*val, 64)
 			fields.FieldByName(mtd+*name).SetFloat(v)
