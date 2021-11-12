@@ -71,7 +71,7 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		ActionName: *store.action,
 		Templates: store.templates,
 		ViewRootPath: handle.viewDirPath,
-		InChainArgs: chainArgs,
+		ChainArgs: chainArgs,
 	}
 	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(instance)))
 

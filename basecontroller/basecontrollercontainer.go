@@ -18,7 +18,7 @@ type BaseControllerContainer struct {
 	Templates *template.Template
 	ViewRootPath string
 	ViewBag interface{}
-	InChainArgs []interface{}
+	ChainArgs []interface{}
 	NeedNext bool
 	OutChainArgs []interface{}
 }
