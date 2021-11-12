@@ -51,10 +51,10 @@ func (self *RouteHandler) muxRouteIgnoreSlash(path string, f func (http.Response
 }
 func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Request) {
 	var args []interface{}
-	var ok bool = true
+	var isNext bool = true
 	for i, _ := range self.middlewareHandle {
-		args, ok = self.callHandle(w, r, self.middlewareHandle[i], args)
-		if ! ok  { return }
+		args, isNext = self.callHandle(w, r, self.middlewareHandle[i], args)
+		if ! isNext  { return }
 	}
 	self.callHandle(w, r, self.mainHandle, args)
 }
