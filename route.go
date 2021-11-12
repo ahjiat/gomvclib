@@ -77,7 +77,7 @@ func (self *Route) RouteChain(rc interface{}) *Route {
 		if ! isFieldExist(&config.Controller, "Base") {
 			errorLog("web.RouteChain, controller:%T missing [BaseController] ", config.Controller)
 		}
-		newRoute.routeChainConfig = append(self.routeChainConfig, config)
+		newRoute.routeChainConfig = append(newRoute.routeChainConfig, config)
 	}
 	return &newRoute
 }
@@ -99,7 +99,8 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 			muxRouter:  self.muxRouter,
 			mainHandle: self.createHandle(&action, icontroller),
 		}
-		for _, config := range self.routeChainConfig {
+		for i, _ := range self.routeChainConfig {
+			config := self.routeChainConfig[i]
 			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller))
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
