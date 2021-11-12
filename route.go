@@ -59,16 +59,18 @@ func (self *Route) SupportParameters(in ...interface{}) *Route {
 	newRoute.pt.Process(in...)
 	return &newRoute
 }
-func (self *Route) RouteChain(rc interface{}) *Route {
+func (self *Route) RouteChain(actions interface{}, icontroller interface{}) *Route {
 	newRoute := *self
-	var rcc  []RouteChainConfig
-	switch rc.(type) {
-		case RouteChainConfig:
-			rcc = []RouteChainConfig{rc.(RouteChainConfig)}
-		case []RouteChainConfig:
-			rcc = rc.([]RouteChainConfig)
+	var rcc []RouteChainConfig
+	switch actions.(type) {
+		case string:
+			rcc = append(rcc, RouteChainConfig{actions.(string), icontroller})
+		case []string:
+			for _, action := range actions.([]string) {
+				rcc = append(rcc, RouteChainConfig{action, icontroller})
+			}
 		default:
-			errorLog("web.RouteChain: parameters not support %T", rc)
+			errorLog("web.RouteChain: parameters not support %T", actions)
 	}
 	for _, config := range rcc {
 		if ! isMethodExist(&config.Controller, config.Action) {
