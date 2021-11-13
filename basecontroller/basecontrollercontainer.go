@@ -48,20 +48,14 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 	self.Response.Write(buff.Bytes())
 }
 func (self *BaseControllerContainer) SetMasterView(fileNames... string) *BaseControllerContainerTemplate {
-	var file, fileName string
-	var dat []byte
-	var err error
+	var fileName string
 	if len(fileNames) != 0 { fileName = fileNames[0] }
-
-	file, fileName = self.retriveAbsFile(fileName)
-
+	file, fileName := self.retriveAbsFile(fileName)
 	if self.MasterTemplate == nil {
 		self.MasterTemplate = template.New("master")
 	}
-
-	dat, err = os.ReadFile(file); if err != nil { panic(err) }
+	dat, err := os.ReadFile(file); if err != nil { panic(err) }
 	_, err = self.MasterTemplate.Parse(string(dat)); if err != nil { panic(err) }
-
 	return &BaseControllerContainerTemplate{self.MasterTemplate}
 }
 func (self *BaseControllerContainer) RouteNext(args... interface{}) {
