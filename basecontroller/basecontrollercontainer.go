@@ -14,7 +14,7 @@ import (
 type BaseControllerContainerTemplate struct {
 	tpl *template.Template
 }
-func (self *BaseControllerContainerTemplate) Append(header string, body string) *BaseControllerContainerTemplate {
+func (self *BaseControllerContainerTemplate) AddTemplate(header string, body string) *BaseControllerContainerTemplate {
 	body = `{{define "`+strings.TrimSpace(header)+`"}}` + body + `{{end}}`
 	if _, err := self.tpl.Parse(body); err != nil { panic(err) }
 	return self
@@ -68,7 +68,7 @@ func (self *BaseControllerContainer) RouteNext(args... interface{}) {
 	self.NeedNext = true
 	self.OutChainArgs = args
 }
-func (self *BaseControllerContainer) ParseHtmlTemplate(inputData interface{}, content string) string {
+func (self *BaseControllerContainer) ParseTemplate(inputData interface{}, content string) string {
 	var output bytes.Buffer
 	tpl, err := template.New("").Parse(content); if err != nil { panic(err) }
 	err = tpl.Execute(&output, inputData); if err != nil { panic(err) }
