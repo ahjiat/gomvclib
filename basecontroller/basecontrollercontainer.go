@@ -125,5 +125,6 @@ func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,str
 		panic(fmt.Sprintf("filename %s must within %s ", fileName, self.ViewRootPath))
 	}
 	_, err := os.Stat(file); if err != nil { panic(err) }
+	fileName = strings.TrimPrefix(file, self.ViewRootPath)
 	return file, fileName
 }
