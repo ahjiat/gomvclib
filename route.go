@@ -97,16 +97,15 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 	for _, row := range rc {
 		path := self.pathPrefix + row.Path
 		action := row.Action
-		mt := template.New("")
 		mtName := new(*string)
 		mts := map[string]*template.Template{}
 		handler := RouteHandler{
 			muxRouter:  self.muxRouter,
-			mainHandle: self.createHandle(&action, icontroller, mt, mtName, mts),
+			mainHandle: self.createHandle(&action, icontroller, mtName, mts),
 		}
 		for i, _ := range self.routeChainConfig {
 			config := self.routeChainConfig[i]
-			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mt, mtName, mts))
+			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mtName, mts))
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
@@ -131,7 +130,7 @@ func (self *Route) RouteByController(path string, icontroller interface{}) {
 	}
 	self.Route(rc, icontroller)
 }
-func (self *Route) createHandle(action *string, icontroller interface{}, mt *template.Template, mtName **string, mts map[string]*template.Template) *RouteHandle {
+func (self *Route) createHandle(action *string, icontroller interface{}, mtName **string, mts map[string]*template.Template) *RouteHandle {
 		if !isMethodExist(&icontroller, *action) {
 			errorLog("Web.RouteConfig, controller:%T action:%s not found! ", icontroller, *action)
 		}
@@ -148,6 +147,6 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mt *tem
 			store: direction{
 				&icontroller, &post, &get, action,
 				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
-				map[string]*template.Template{}, mt, mtName, mts},
+				map[string]*template.Template{}, mtName, mts},
 		}
 }

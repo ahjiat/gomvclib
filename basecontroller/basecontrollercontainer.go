@@ -60,7 +60,6 @@ type BaseControllerContainer struct {
 	ChainArgs []interface{}
 	NeedNext bool
 	OutChainArgs []interface{}
-	MasterTemplate *template.Template
 	ContainerTemplate *BaseControllerContainerTemplate
 	MasterTemplateName **string
 	MasterTemplates	map[string]*template.Template
