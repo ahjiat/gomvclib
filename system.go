@@ -24,9 +24,10 @@ type direction struct {
 	get *http_method
 	action *string
 	viewBasePath string
-	templates *template.Template
+	templates map[string]*template.Template
 	masterTemplate *template.Template
 	masterTemplateName **string
+	masterTemplates map[string]*template.Template
 }
 
 type http_method map[string]string

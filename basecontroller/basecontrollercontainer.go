@@ -54,7 +54,7 @@ type BaseControllerContainer struct {
 	Request *http.Request
 	ViewBasePath string
 	ActionName string
-	Templates *template.Template
+	Templates map[string]*template.Template
 	ViewRootPath string
 	ViewBag interface{}
 	ChainArgs []interface{}
@@ -63,6 +63,7 @@ type BaseControllerContainer struct {
 	MasterTemplate *template.Template
 	ContainerTemplate *BaseControllerContainerTemplate
 	MasterTemplateName **string
+	MasterTemplates	map[string]*template.Template
 }
 func (self *BaseControllerContainer) Echo(s string) {
 	self.Response.Write([]byte(s))
@@ -82,23 +83,24 @@ func (self *BaseControllerContainer) CreateMasterView(fileNames... string) *Base
 	var fileName string
 	if len(fileNames) != 0 { fileName = fileNames[0] }
 	file, fileName := self.retriveAbsFile(fileName)
-	tpl := self.MasterTemplate.Lookup(fileName)
-	if tpl == nil {
+	var tpl *template.Template 
+	tpl, ok := self.MasterTemplates[fileName]
+	if ! ok {
 		data, err := os.ReadFile(file); if err != nil { panic(err) }
-		tpl, err = self.MasterTemplate.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+		tpl, err = template.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+		self.MasterTemplates[fileName] = tpl
 	}
 	*self.MasterTemplateName = &fileName
 	self.ContainerTemplate = &BaseControllerContainerTemplate{tpl, self.ViewRootPath, self.ViewBasePath}
 	return self.ContainerTemplate
 }
 func (self *BaseControllerContainer) RemoveMasterView() {
-	*self.MasterTemplateName = new(string)
+	*self.MasterTemplateName = nil
 }
 func (self *BaseControllerContainer) GetMasterView() *BaseControllerContainerTemplate {
-	if *self.MasterTemplateName == nil || self.MasterTemplate.Lookup(**self.MasterTemplateName) == nil {
-		return nil
-	}
-	tpl := self.MasterTemplate.Lookup(**self.MasterTemplateName)
+	if *self.MasterTemplateName == nil { return nil }
+	tpl, ok := self.MasterTemplates[**self.MasterTemplateName]
+	if !ok { return nil }
 	self.ContainerTemplate = &BaseControllerContainerTemplate{tpl, self.ViewRootPath, self.ViewBasePath}
 	return self.ContainerTemplate
 }
@@ -116,25 +118,26 @@ func (self *BaseControllerContainer) ParseTemplate(inputData interface{}, conten
 func (self *BaseControllerContainer) getViewContent(inputData interface{}, fileNames... string) bytes.Buffer {
 	var file, fileName string
 	var err error
+	var ok bool
+	var output bytes.Buffer
 	if len(fileNames) != 0 { fileName = fileNames[0] }
 
 	file, fileName = self.retriveAbsFile(fileName)
 
 	var tpl *template.Template
-	if *self.MasterTemplateName != nil && self.MasterTemplate.Lookup(**self.MasterTemplateName) != nil {
-		tpl = self.MasterTemplate.Lookup(**self.MasterTemplateName)
-		if viewTpl := self.MasterTemplate.Lookup(fileName); viewTpl == nil {
+	if *self.MasterTemplateName != nil {
+		tpl, _ = self.MasterTemplates[**self.MasterTemplateName]
+		if viewTpl := tpl.Lookup(fileName); viewTpl == nil {
 			data, err := os.ReadFile(file); if err != nil { panic(err) }
-			_, err = self.MasterTemplate.New("view").Parse(string(data)); if err != nil { panic(err) }
+			_, err = tpl.New("view").Parse(string(data)); if err != nil { panic(err) }
 		}
 	} else {
-		tpl = self.Templates.Lookup(fileName)
-		if tpl == nil {
+		if tpl, ok = self.Templates[fileName]; ! ok {
 			data, err := os.ReadFile(file); if err != nil { panic(err) }
-			tpl, err = self.Templates.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+			tpl, err = template.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+			self.Templates[fileName] = tpl
 		}
 	}
-	var output bytes.Buffer
 	err = tpl.Execute(&output, inputData)
 	if err != nil { panic(err) }
 	return output
