@@ -12,6 +12,7 @@ import (
 )
 
 type BaseControllerContainerTemplate struct {
+	masterTemplates	map[string]*template.Template
 	tpl *template.Template
 	viewRootPath string
 	viewBasePath string
@@ -20,14 +21,18 @@ type BaseControllerContainerTemplate struct {
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputData interface{}, fileNames... string) *BaseControllerContainerTemplate {
 	var output bytes.Buffer
 	var fileName string
+	var ok bool
+	var mt *template.Template
+	var err error
 	if len(fileNames) != 0 { fileName = fileNames[0] }
 	file, fileName := self.retriveAbsFile(fileName)
 
-	dat, err := os.ReadFile(file); if err != nil { panic(err) }
-	data := string(dat)
-	t, err := template.New("").Parse(data); if err != nil { panic(err) }
-	err = t.Execute(&output, inputData); if err != nil { panic(err) }
-
+	if mt, ok = self.masterTemplates[fileName]; ! ok {
+		dat, err := os.ReadFile(file); if err != nil { panic(err) }
+		mt, err = template.New(fileName).Parse(string(dat)); if err != nil { panic(err) }
+		self.masterTemplates[fileName] = mt
+	}
+	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return self.DefineTemplateByString(name, output.String())
 }
 func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
@@ -102,7 +107,7 @@ func (self *BaseControllerContainer) CreateMasterView(fileNames... string) *Base
 		self.MasterTemplates[fileName] = tpl
 	}
 	*self.MasterTemplateName = &fileName
-	self.ContainerTemplate = &BaseControllerContainerTemplate{tpl, self.ViewRootPath, self.ViewBasePath, self.ActionName}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, tpl, self.ViewRootPath, self.ViewBasePath, self.ActionName}
 	return self.ContainerTemplate
 }
 func (self *BaseControllerContainer) RemoveMasterView() {
@@ -112,7 +117,7 @@ func (self *BaseControllerContainer) GetMasterView() *BaseControllerContainerTem
 	if *self.MasterTemplateName == nil { return nil }
 	tpl, ok := self.MasterTemplates[**self.MasterTemplateName]
 	if !ok { return nil }
-	self.ContainerTemplate = &BaseControllerContainerTemplate{tpl, self.ViewRootPath, self.ViewBasePath, self.ActionName}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, tpl, self.ViewRootPath, self.ViewBasePath, self.ActionName}
 	return self.ContainerTemplate
 }
 func (self *BaseControllerContainer) RouteNext(args... interface{}) {
