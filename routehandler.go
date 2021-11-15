@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"github.com/ahjiat/gomvclib/basecontroller"
-	"html/template"
 )
 
 type RouteHandle struct {
@@ -53,15 +52,14 @@ func (self *RouteHandler) muxRouteIgnoreSlash(path string, f func (http.Response
 func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Request) {
 	var args []interface{}
 	var isNext bool = true
-	var mt *template.Template
 	for i, _ := range self.middlewareHandle {
-		args, mt, isNext = self.callHandle(w, r, self.middlewareHandle[i], args, mt)
+		args, isNext = self.callHandle(w, r, self.middlewareHandle[i], args)
 		if ! isNext  { return }
 	}
-	self.callHandle(w, r, self.mainHandle, args, mt)
+	self.callHandle(w, r, self.mainHandle, args)
 }
 
-func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, handle *RouteHandle, chainArgs []interface{}, mt *template.Template) ([]interface{}, *template.Template, bool) {
+func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, handle *RouteHandle, chainArgs []interface{}) ([]interface{}, bool) {
 	store := handle.store
 	va := reflect.ValueOf(*store.ptr)
 	v := reflect.New(va.Type().Elem())
@@ -74,7 +72,8 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		Templates: store.templates,
 		ViewRootPath: handle.viewDirPath,
 		ChainArgs: chainArgs,
-		MasterTemplate: mt,
+		MasterTemplate: store.masterTemplate,
+		MasterTemplateName: store.masterTemplateName,
 	}
 	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(instance)))
 
@@ -85,7 +84,7 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 	method := v.MethodByName(*store.action);
 	if method.Type().NumIn() == 0 {
 		method.Call([]reflect.Value{})
-		return instance.OutChainArgs, instance.MasterTemplate, instance.NeedNext
+		return instance.OutChainArgs, instance.NeedNext
 	}
 	paramt := method.Type().In(0)
 	fields := reflect.New(paramt).Elem()
@@ -105,7 +104,7 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		}
 	}
 	method.Call([]reflect.Value{fields})
-	return instance.OutChainArgs, instance.MasterTemplate, instance.NeedNext
+	return instance.OutChainArgs, instance.NeedNext
 }
 
 func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val *string, fields *reflect.Value, t *string, pt paramtype) {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"html/template"
+	"text/template"
 	"github.com/ahjiat/gomvclib/global"
 )
 
@@ -25,6 +25,8 @@ type direction struct {
 	action *string
 	viewBasePath string
 	templates *template.Template
+	masterTemplate *template.Template
+	masterTemplateName **string
 }
 
 type http_method map[string]string

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"github.com/gorilla/mux"
 	"os"
-	"html/template"
+	"text/template"
 )
 
 type Route struct {
@@ -97,13 +97,15 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 	for _, row := range rc {
 		path := self.pathPrefix + row.Path
 		action := row.Action
+		mt := template.New("")
+		mtName := new(*string)
 		handler := RouteHandler{
 			muxRouter:  self.muxRouter,
-			mainHandle: self.createHandle(&action, icontroller),
+			mainHandle: self.createHandle(&action, icontroller, mt, mtName),
 		}
 		for i, _ := range self.routeChainConfig {
 			config := self.routeChainConfig[i]
-			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller))
+			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mt, mtName))
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
@@ -128,7 +130,7 @@ func (self *Route) RouteByController(path string, icontroller interface{}) {
 	}
 	self.Route(rc, icontroller)
 }
-func (self *Route) createHandle(action *string, icontroller interface{}) *RouteHandle {
+func (self *Route) createHandle(action *string, icontroller interface{}, mt *template.Template, mtName **string) *RouteHandle {
 		if !isMethodExist(&icontroller, *action) {
 			errorLog("Web.RouteConfig, controller:%T action:%s not found! ", icontroller, *action)
 		}
@@ -145,6 +147,6 @@ func (self *Route) createHandle(action *string, icontroller interface{}) *RouteH
 			store: direction{
 				&icontroller, &post, &get, action,
 				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
-				template.New("")},
+				template.New(""), mt, mtName},
 		}
 }
