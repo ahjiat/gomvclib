@@ -54,7 +54,6 @@ func (self *BaseControllerContainerTemplate) retriveAbsFile(fileName string) (st
 	if absfile, _ := filepath.Abs(file); !strings.HasPrefix(absfile, self.viewRootPath) {
 		panic(fmt.Sprintf("filename %s must within %s ", fileName, self.viewRootPath))
 	}
-	_, err := os.Stat(file); if err != nil { panic(err) }
 	fileName = strings.TrimPrefix(file, self.viewRootPath)
 	return file, fileName
 }
@@ -73,6 +72,7 @@ type BaseControllerContainer struct {
 	ContainerTemplate *BaseControllerContainerTemplate
 	MasterTemplateName **string
 	MasterTemplates	map[string]*template.Template
+	MasterTemplate **template.Template
 }
 func (self *BaseControllerContainer) Echo(s string) {
 	self.Response.Write([]byte(s))
@@ -89,36 +89,35 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 	self.Response.Write(buff.Bytes())
 }
 func (self *BaseControllerContainer) MasterView(tplName string, inputData interface{}, fileNames... string) {
-	mst := self.GetMasterView()
-	if mst == nil { return }
+	mst, ok := self.GetMasterView(); if ! ok { return }
 	mst.DefineTemplate(tplName, inputData, fileNames...)
-	tpl, _ := self.MasterTemplates[**self.MasterTemplateName]
+	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, inputData); if err != nil { panic(err) }
 }
 func (self *BaseControllerContainer) CreateMasterView(fileNames... string) *BaseControllerContainerTemplate {
 	var fileName string
 	if len(fileNames) != 0 { fileName = fileNames[0] }
 	file, fileName := self.retriveAbsFile(fileName)
-	var tpl *template.Template 
-	tpl, ok := self.MasterTemplates[fileName]
+	var otpl *template.Template; var err error
+	otpl, ok := self.MasterTemplates[fileName]
 	if ! ok {
 		data, err := os.ReadFile(file); if err != nil { panic(err) }
-		tpl, err = template.New(fileName).Parse(string(data)); if err != nil { panic(err) }
-		self.MasterTemplates[fileName] = tpl
+		otpl, err = template.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+		self.MasterTemplates[fileName] = otpl
 	}
+	*self.MasterTemplate, err = otpl.Clone(); if err != nil { panic(err) }
 	*self.MasterTemplateName = &fileName
-	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, tpl, self.ViewRootPath, self.ViewBasePath, self.ActionName}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
 	return self.ContainerTemplate
 }
 func (self *BaseControllerContainer) RemoveMasterView() {
 	*self.MasterTemplateName = nil
+	*self.MasterTemplate = nil
 }
-func (self *BaseControllerContainer) GetMasterView() *BaseControllerContainerTemplate {
-	if *self.MasterTemplateName == nil { return nil }
-	tpl, ok := self.MasterTemplates[**self.MasterTemplateName]
-	if !ok { return nil }
-	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, tpl, self.ViewRootPath, self.ViewBasePath, self.ActionName}
-	return self.ContainerTemplate
+func (self *BaseControllerContainer) GetMasterView() (*BaseControllerContainerTemplate, bool) {
+	if *self.MasterTemplate == nil { return nil, false }
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
+	return self.ContainerTemplate, true
 }
 func (self *BaseControllerContainer) RouteNext(args... interface{}) {
 	self.NeedNext = true
@@ -182,7 +181,6 @@ func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,str
 	if absfile, _ := filepath.Abs(file); !strings.HasPrefix(absfile, self.ViewRootPath) {
 		panic(fmt.Sprintf("filename %s must within %s ", fileName, self.ViewRootPath))
 	}
-	_, err := os.Stat(file); if err != nil { panic(err) }
 	fileName = strings.TrimPrefix(file, self.ViewRootPath)
 	return file, fileName
 }

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/ahjiat/gomvclib/basecontroller"
+	"text/template"
 )
 
 type RouteHandle struct {
@@ -52,14 +53,15 @@ func (self *RouteHandler) muxRouteIgnoreSlash(path string, f func (http.Response
 func (self *RouteHandler) mainRouteHandler(w http.ResponseWriter, r *http.Request) {
 	var args []interface{}
 	var isNext bool = true
+	mtPtr := new(*template.Template)
 	for i, _ := range self.middlewareHandle {
-		args, isNext = self.callHandle(w, r, self.middlewareHandle[i], args)
+		args, isNext = self.callHandle(w, r, self.middlewareHandle[i], args, mtPtr)
 		if ! isNext  { return }
 	}
-	self.callHandle(w, r, self.mainHandle, args)
+	self.callHandle(w, r, self.mainHandle, args, mtPtr)
 }
 
-func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, handle *RouteHandle, chainArgs []interface{}) ([]interface{}, bool) {
+func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, handle *RouteHandle, chainArgs []interface{}, mtPtr **template.Template) ([]interface{}, bool) {
 	store := handle.store
 	va := reflect.ValueOf(*store.ptr)
 	v := reflect.New(va.Type().Elem())
@@ -74,6 +76,7 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		ChainArgs: chainArgs,
 		MasterTemplateName: store.masterTemplateName,
 		MasterTemplates: store.masterTemplates,
+		MasterTemplate: mtPtr,
 	}
 	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(instance)))
 
