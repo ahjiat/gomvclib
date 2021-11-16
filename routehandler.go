@@ -74,7 +74,6 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		Templates: store.templates,
 		ViewRootPath: handle.viewDirPath,
 		ChainArgs: chainArgs,
-		MasterTemplateName: store.masterTemplateName,
 		MasterTemplates: store.masterTemplates,
 		MasterTemplate: mtPtr,
 	}

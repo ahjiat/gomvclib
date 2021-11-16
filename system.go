@@ -25,7 +25,6 @@ type direction struct {
 	action *string
 	viewBasePath string
 	templates map[string]*template.Template
-	masterTemplateName **string
 	masterTemplates map[string]*template.Template
 }
 
