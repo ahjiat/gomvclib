@@ -59,7 +59,7 @@ func (self *Route) SupportParameters(in ...interface{}) *Route {
 	newRoute.pt.Process(in...)
 	return &newRoute
 }
-func (self *Route) RouteChain(actions interface{}, icontroller interface{}) *Route {
+func (self *Route) Use(actions interface{}, icontroller interface{}) *Route {
 	newRoute := *self
 	var rcc []RouteChainConfig
 	switch actions.(type) {
