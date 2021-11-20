@@ -27,5 +27,5 @@ func Wait(command string) (string, string, error) {
 }
 
 func NoWait(command string) {
-	go Wait(command)
+	//go Wait(command)
 }
