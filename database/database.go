@@ -1,16 +1,19 @@
 package Database
 
 import (
-	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-var container = map[string]*sql.DB{}
+var container = map[string]*gorm.DB{}
 
-func AddDBConnection(sessionName string, dns string) {
-	db, err := sql.Open("mysql", dns); if err != nil { panic(err) }
+func AddDBConnection(sessionName string, dsn string) {
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	}); if err != nil { panic(err) }
 	container[sessionName] = db
 }
-func GetSession(sessionName string) *sql.DB {
+func GetSession(sessionName string) *gorm.DB {
 	return container[sessionName]
 }
