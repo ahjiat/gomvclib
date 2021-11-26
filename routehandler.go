@@ -92,24 +92,25 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 	fields := reflect.New(paramt).Elem()
 	if len(*store.get) != 0 {
 		for name, t := range *store.get {
-			val := r.URL.Query().Get(name)
-			if val == "" { continue }
-			self.setmainRouteHandlerField("GET_", &name, &val, &fields, &t, handle.pt)
+			vals, found := r.URL.Query()[name]
+			if ! found { continue }
+			self.setmainRouteHandlerField("GET_", &name, &vals, &fields, &t, handle.pt)
 		}
 	}
 	if len(*store.post) != 0 {
 		r.ParseForm();
 		for name, t := range *store.post {
-			val := r.PostFormValue(name)
-			if val == "" { continue }
-			self.setmainRouteHandlerField("POST_", &name, &val, &fields, &t, handle.pt)
+			vals, found := r.PostForm[name]
+			if ! found { continue }
+			self.setmainRouteHandlerField("POST_", &name, &vals, &fields, &t, handle.pt)
 		}
 	}
 	method.Call([]reflect.Value{fields})
 	return instance.OutChainArgs, instance.NeedNext
 }
 
-func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val *string, fields *reflect.Value, t *string, pt paramtype) {
+func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, vals *[]string, fields *reflect.Value, t *string, pt paramtype) {
+	var val *string = &(*vals)[0]
 	switch *t {
 		case "int":
 			v, _ := strconv.ParseInt(*val, 10, 64)
@@ -117,10 +118,19 @@ func (self *RouteHandler) setmainRouteHandlerField(mtd string, name *string, val
 		case "*int":
 			v1, _ := strconv.ParseInt(*val, 10, 64); v := int(v1)
 			fields.FieldByName(mtd+*name).Set(reflect.ValueOf(&v))
+		case "[]int":
+			var vInts []int
+			for _, s := range *vals {
+				v, _ := strconv.Atoi(s)
+				vInts = append(vInts, v)
+			}
+			fields.FieldByName(mtd+*name).Set(reflect.ValueOf(vInts))
 		case "string":
 			fields.FieldByName(mtd+*name).SetString(*val)
 		case "*string":
 			fields.FieldByName(mtd+*name).Set(reflect.ValueOf(val))
+		case "[]string":
+			fields.FieldByName(mtd+*name).Set(reflect.ValueOf(*vals))
 		case "float64":
 			v, _ := strconv.ParseFloat(*val, 64)
 			fields.FieldByName(mtd+*name).SetFloat(v)
