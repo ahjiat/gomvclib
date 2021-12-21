@@ -112,7 +112,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 }
 func (self *Route) RouteByStaticDir(path string, dir string) {
 	fs := http.FileServer(http.Dir(dir))
-	r := self.PathPrefix(path)
+	r := self.PathPrefix(path+"/")
     r.muxRouter.PathPrefix(r.pathPrefix).Handler(http.StripPrefix(r.pathPrefix, fs))
 }
 func (self *Route) RouteByController(path string, icontroller interface{}) {
