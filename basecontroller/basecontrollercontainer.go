@@ -73,8 +73,9 @@ type BaseControllerContainer struct {
 	MasterTemplates	map[string]*template.Template
 	MasterTemplate **template.Template
 }
-func (self *BaseControllerContainer) Echo(s string) {
-	self.Response.Write([]byte(s))
+func (self *BaseControllerContainer) Echo(value string, args ...string) {
+	if len(args) == 0 { self.Response.Write([]byte(value)); return }
+	self.Response.Write([]byte(fmt.Sprintf(value, args)))
 }
 func (self *BaseControllerContainer) GetUrlVar(s string) string {
 	return mux.Vars(self.Request)[s]
