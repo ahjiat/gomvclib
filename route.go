@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"os"
 	"text/template"
+	"net/http"
 )
 
 type Route struct {
@@ -108,6 +109,11 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
+}
+func (self *Route) RouteByStaticDir(path string, dir string) {
+	fs := http.FileServer(http.Dir(dir))
+	r := self.PathPrefix(path)
+    r.muxRouter.PathPrefix(r.pathPrefix).Handler(http.StripPrefix(r.pathPrefix, fs))
 }
 func (self *Route) RouteByController(path string, icontroller interface{}) {
 	if ! isFieldExist(&icontroller, "Base") {
