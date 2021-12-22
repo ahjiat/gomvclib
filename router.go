@@ -3,7 +3,6 @@ package Web
 import (
 	"github.com/gorilla/mux"
 	"github.com/ahjiat/gomvclib/global"
-	"fmt"
 )
 
 func Router() (*Route, *mux.Router) {
