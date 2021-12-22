@@ -3,7 +3,7 @@ package Web
 import (
 	"github.com/gorilla/mux"
 	"github.com/ahjiat/gomvclib/global"
-	"os"
+	"fmt"
 )
 
 func Router() (*Route, *mux.Router) {
@@ -13,10 +13,6 @@ func Router() (*Route, *mux.Router) {
 	sys := systeminfo{muxRouter}
 	systemInformation.muxRouteExactly("/system/information", sys.pageShowRouteInfoHandler)
 
-	if global.SysPath == "" {
-		curPath, err := os.Getwd(); 
-		if err != nil { panic(err) }
-		global.SysPath = curPath
-	}
+	if global.SysPath == "" { panic("global.SysPath Null") }
 	return &route, muxRouter
 }
