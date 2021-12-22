@@ -72,6 +72,8 @@ type BaseControllerContainer struct {
 	ContainerTemplate *BaseControllerContainerTemplate
 	MasterTemplates	map[string]*template.Template
 	MasterTemplate **template.Template
+	RoutePath string
+	IRouteArgs []interface{}
 }
 func (self *BaseControllerContainer) Echo(value string, args ...interface{}) {
 	if len(args) == 0 { self.Response.Write([]byte(value)); return }

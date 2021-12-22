@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 	"os"
 	"text/template"
-	"net/http"
 )
 
 type Route struct {
@@ -84,7 +83,7 @@ func (self *Route) Use(actions interface{}, icontroller interface{}) *Route {
 	}
 	return &newRoute
 }
-func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
+func (self *Route) Route(routeConfig interface{}, icontroller interface{}, iRouteArgs ...interface{}) {
 	var rc []RouteConfig
 	switch routeConfig.(type) {
 	case RouteConfig:
@@ -101,19 +100,22 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}) {
 		mts := map[string]*template.Template{}
 		handler := RouteHandler{
 			muxRouter:  self.muxRouter,
-			mainHandle: self.createHandle(&action, icontroller, mts),
+			mainHandle: self.createHandle(&action, icontroller, mts, iRouteArgs),
 		}
 		for i, _ := range self.routeChainConfig {
 			config := self.routeChainConfig[i]
-			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mts))
+			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mts, iRouteArgs))
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
 }
-func (self *Route) RouteByStaticDir(path string, dir string) {
-	fs := http.FileServer(http.Dir(dir))
-	r := self.PathPrefix(path+"/")
-    r.muxRouter.PathPrefix(r.pathPrefix).Handler(http.StripPrefix(r.pathPrefix, fs))
+func (self *Route) RouteByStaticDir(path string, dir string, defaultIndex string) {
+	r := self.PathPrefix(path)
+	if defaultIndex != "" {
+		r.Route(RouteConfig{"/{n:.*}", "Process"}, new(basecontroller.ServeStaticDir), dir, "/" + defaultIndex)
+	} else {
+		r.Route(RouteConfig{"/{n:.*}", "Process"}, new(basecontroller.ServeStaticDir), dir)
+	}
 }
 func (self *Route) RouteByController(path string, icontroller interface{}) {
 	if ! isFieldExist(&icontroller, "Base") {
@@ -135,7 +137,7 @@ func (self *Route) RouteByController(path string, icontroller interface{}) {
 	}
 	self.Route(rc, icontroller)
 }
-func (self *Route) createHandle(action *string, icontroller interface{}, mts map[string]*template.Template) *RouteHandle {
+func (self *Route) createHandle(action *string, icontroller interface{}, mts map[string]*template.Template, iRouteArgs []interface{}) *RouteHandle {
 		if !isMethodExist(&icontroller, *action) {
 			errorLog("Web.RouteConfig, controller:%T action:%s not found! ", icontroller, *action)
 		}
@@ -153,5 +155,7 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 				&icontroller, &post, &get, action,
 				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
 				map[string]*template.Template{}, mts},
+			routePath: self.pathPrefix,
+			iRouteArgs: iRouteArgs,
 		}
 }
