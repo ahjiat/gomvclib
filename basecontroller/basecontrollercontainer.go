@@ -112,7 +112,7 @@ func (self *BaseControllerContainer) CreateMasterTemplate(fileNames... string) *
 	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
 	return self.ContainerTemplate
 }
-func (self *BaseControllerContainer) RemoveMasterView() {
+func (self *BaseControllerContainer) RemoveMasterTemplate() {
 	*self.MasterTemplate = nil
 }
 func (self *BaseControllerContainer) GetMasterView() (*BaseControllerContainerTemplate, bool) {
