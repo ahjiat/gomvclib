@@ -29,14 +29,14 @@ func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputDa
 
 	if mt, ok = self.masterTemplates[fileName]; ! ok {
 		dat, err := os.ReadFile(file); if err != nil { panic(err) }
-		mt, err = template.New(fileName).Parse(string(dat)); if err != nil { panic(err) }
+		mt, err = template.New(fileName).Delims("@{", "}").Parse(string(dat)); if err != nil { panic(err) }
 		self.masterTemplates[fileName] = mt
 	}
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return self.DefineTemplateByString(name, output.String())
 }
 func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
-	if _, err := self.tpl.New(name).Parse(body); err != nil { panic(err) }
+	if _, err := self.tpl.New(name).Delims("@{", "}").Parse(body); err != nil { panic(err) }
 	return self
 }
 func (self *BaseControllerContainerTemplate) retriveAbsFile(fileName string) (string,string) {
@@ -104,7 +104,7 @@ func (self *BaseControllerContainer) CreateMasterView(fileNames... string) *Base
 	otpl, ok := self.MasterTemplates[fileName]
 	if ! ok {
 		data, err := os.ReadFile(file); if err != nil { panic(err) }
-		otpl, err = template.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+		otpl, err = template.New(fileName).Delims("@{", "}").Parse(string(data)); if err != nil { panic(err) }
 		self.MasterTemplates[fileName] = otpl
 	}
 	*self.MasterTemplate, err = otpl.Clone(); if err != nil { panic(err) }
@@ -125,7 +125,7 @@ func (self *BaseControllerContainer) RouteNext(args... interface{}) {
 }
 func (self *BaseControllerContainer) ParseTemplate(inputData interface{}, content string) string {
 	var output bytes.Buffer
-	tpl, err := template.New("").Parse(content); if err != nil { panic(err) }
+	tpl, err := template.New("").Delims("@{", "}").Parse(content); if err != nil { panic(err) }
 	err = tpl.Execute(&output, inputData); if err != nil { panic(err) }
 	return output.String()
 }
@@ -142,7 +142,7 @@ func (self *BaseControllerContainer) getViewContent(inputData interface{}, fileN
 
 	if tpl, ok = self.Templates[fileName]; ! ok {
 		data, err := os.ReadFile(file); if err != nil { panic(err) }
-		tpl, err = template.New(fileName).Parse(string(data)); if err != nil { panic(err) }
+		tpl, err = template.New(fileName).Delims("@{", "}").Parse(string(data)); if err != nil { panic(err) }
 		self.Templates[fileName] = tpl
 	}
 
