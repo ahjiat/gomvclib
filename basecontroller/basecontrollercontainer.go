@@ -70,6 +70,7 @@ type BaseControllerContainer struct {
 	NeedNext bool
 	OutChainArgs []interface{}
 	ContainerTemplate *BaseControllerContainerTemplate
+	MasterViewBag interface{}
 	MasterTemplates	map[string]*template.Template
 	MasterTemplate **template.Template
 	RoutePath string
@@ -90,11 +91,11 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 	buff := self.getViewContent(self.ViewBag, fileNames...)
 	self.Response.Write(buff.Bytes())
 }
-func (self *BaseControllerContainer) MasterView(tplName string, inputData interface{}, fileNames... string) {
+func (self *BaseControllerContainer) MasterView(tplName string, fileNames... string) {
 	mst, ok := self.GetMasterView(); if ! ok { return }
-	mst.DefineTemplate(tplName, inputData, fileNames...)
+	mst.DefineTemplate(tplName, self.MasterViewBag, fileNames...)
 	tpl := *self.MasterTemplate
-	err := tpl.Execute(self.Response, inputData); if err != nil { panic(err) }
+	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
 func (self *BaseControllerContainer) CreateMasterView(fileNames... string) *BaseControllerContainerTemplate {
 	var fileName string
