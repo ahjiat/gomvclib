@@ -97,7 +97,7 @@ func (self *BaseControllerContainer) MasterView(tplName string, fileNames... str
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
-func (self *BaseControllerContainer) CreateMasterView(fileNames... string) *BaseControllerContainerTemplate {
+func (self *BaseControllerContainer) CreateMasterTemplate(fileNames... string) *BaseControllerContainerTemplate {
 	var fileName string
 	if len(fileNames) != 0 { fileName = fileNames[0] }
 	file, fileName := self.retriveAbsFile(fileName)
