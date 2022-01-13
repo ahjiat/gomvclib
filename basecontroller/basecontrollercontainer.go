@@ -35,6 +35,11 @@ func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputDa
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return self.DefineTemplateByString(name, output.String())
 }
+func (self *BaseControllerContainerTemplate) DefineTemplateByFile(name string, fileName string) {
+	file, fileName := self.retriveAbsFile(fileName)
+	dat, err := os.ReadFile(file); if err != nil { panic(err) }
+	self.DefineTemplateByString(name, string(dat))
+}
 func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
 	if _, err := self.tpl.New(name).Delims("@{", "}").Parse(body); err != nil { panic(err) }
 	return self
@@ -93,7 +98,9 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 }
 func (self *BaseControllerContainer) MasterView(tplName string, fileNames... string) {
 	mst, ok := self.GetMasterView(); if ! ok { return }
-	mst.DefineTemplate(tplName, self.MasterViewBag, fileNames...)
+	var fileName string
+	if len(fileNames) != 0 { fileName = fileNames[0] }
+	mst.DefineTemplateByFile(tplName, fileName)
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
