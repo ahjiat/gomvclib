@@ -19,9 +19,9 @@ type BaseControllerContainerTemplate struct {
 	actionName string
 }
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputData interface{}, fileNames... string) *BaseControllerContainerTemplate {
-	return self.DefineTemplateByString(name, self.DefineTemplateCore(name, inputData, fileNames...))
+	return self.DefineTemplateByString(name, self.DefineTemplateCore(inputData, fileNames...))
 }
-func (self *BaseControllerContainerTemplate) DefineTemplateCore(name string, inputData interface{}, fileNames... string) string {
+func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interface{}, fileNames... string) string {
 	var output bytes.Buffer
 	var fileName string
 	var ok bool
@@ -40,10 +40,10 @@ func (self *BaseControllerContainerTemplate) DefineTemplateCore(name string, inp
 }
 func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
 	funcMap := template.FuncMap {
-		"LoadFile": func(file string, datas ...interface{}) (string) {
+		"LoadFile": func(file string, datas ...interface{}) string {
 			var data interface{}
 			if len(datas) != 0 { data = datas[0] }
-			return self.DefineTemplateCore(file, data, file)
+			return self.DefineTemplateCore(data, file)
 		},
 	}
 	if _, err := self.tpl.New(name).Delims("@{", "}").Funcs(funcMap).Parse(body); err != nil { panic(err) }
@@ -104,7 +104,10 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 }
 func (self *BaseControllerContainer) MasterView(fileNames... string) {
 	mst, ok := self.GetMasterView(); if ! ok { return }
-	mst.DefineTemplate("", nil, fileNames...)
+	var fileName string
+	if len(fileNames) != 0 { fileName = fileNames[0] }
+	_, fileName = self.retriveAbsFile(fileName)
+	mst.DefineTemplate(fileName, nil, fileNames...)
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
