@@ -29,7 +29,7 @@ func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputDa
 
 	if mt, ok = self.masterTemplates[fileName]; ! ok {
 		dat, err := os.ReadFile(file); if err != nil { panic(err) }
-		mt, err = template.New(fileName).Delims("@{", "}").Parse(string(dat)); if err != nil { panic(err) }
+		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
 		self.masterTemplates[fileName] = mt
 	}
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
