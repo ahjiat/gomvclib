@@ -19,6 +19,9 @@ type BaseControllerContainerTemplate struct {
 	actionName string
 }
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputData interface{}, fileNames... string) *BaseControllerContainerTemplate {
+	return self.DefineTemplateByString(name, self.DefineTemplateCore(name, inputData, fileNames...))
+}
+func (self *BaseControllerContainerTemplate) DefineTemplateCore(name string, inputData interface{}, fileNames... string) string {
 	var output bytes.Buffer
 	var fileName string
 	var ok bool
@@ -33,10 +36,17 @@ func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputDa
 		self.masterTemplates[fileName] = mt
 	}
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
-	return self.DefineTemplateByString(name, output.String())
+	return output.String()
 }
 func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
-	if _, err := self.tpl.New(name).Delims("@{", "}").Parse(body); err != nil { panic(err) }
+	funcMap := template.FuncMap {
+		"LoadFile": func(file string, datas ...interface{}) (string) {
+			var data interface{}
+			if len(datas) != 0 { data = datas[0] }
+			return self.DefineTemplateCore(file, data, file)
+		},
+	}
+	if _, err := self.tpl.New(name).Delims("@{", "}").Funcs(funcMap).Parse(body); err != nil { panic(err) }
 	return self
 }
 func (self *BaseControllerContainerTemplate) retriveAbsFile(fileName string) (string,string) {
@@ -57,6 +67,7 @@ func (self *BaseControllerContainerTemplate) retriveAbsFile(fileName string) (st
 	fileName = strings.TrimPrefix(file, self.viewRootPath)
 	return file, fileName
 }
+
 
 type BaseControllerContainer struct {
 	Response http.ResponseWriter
