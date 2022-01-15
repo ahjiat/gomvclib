@@ -102,12 +102,14 @@ func (self *BaseControllerContainer) View(fileNames... string) {
 	buff := self.getViewContent(self.ViewBag, fileNames...)
 	self.Response.Write(buff.Bytes())
 }
-func (self *BaseControllerContainer) MasterView(fileNames... string) {
+func (self *BaseControllerContainer) MasterView(args... interface{}) {
 	mst, ok := self.GetMasterView(); if ! ok { return }
 	var fileName string
-	if len(fileNames) != 0 { fileName = fileNames[0] }
+	var dat interface{} = nil
+	if len(args) == 1 { fileName = args[0].(string) }
+	if len(args) >= 2 { dat = args[1] }
 	_, fileName = self.retriveAbsFile(fileName)
-	mst.DefineTemplate(fileName, nil, fileNames...)
+	mst.DefineTemplate(fileName, dat, fileName)
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
