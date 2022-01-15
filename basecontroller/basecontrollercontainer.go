@@ -106,25 +106,20 @@ func (self *BaseControllerContainer) MasterView(args... interface{}) {
 	mst, ok := self.GetMasterView(); if ! ok { return }
 	var fileName string
 	var dat interface{} = nil
-	if len(args) == 1 { fileName = args[0].(string) }
+	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
 	_, fileName = self.retriveAbsFile(fileName)
 	mst.DefineTemplate(fileName, dat, fileName)
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
-func (self *BaseControllerContainer) CreateMasterTemplate(fileNames... string) *BaseControllerContainerTemplate {
-	var fileName string
-	if len(fileNames) != 0 { fileName = fileNames[0] }
-	file, fileName := self.retriveAbsFile(fileName)
-	var otpl *template.Template; var err error
-	otpl, ok := self.MasterTemplates[fileName]
-	if ! ok {
-		data, err := os.ReadFile(file); if err != nil { panic(err) }
-		otpl, err = template.New(fileName).Delims("@{", "}").Parse(string(data)); if err != nil { panic(err) }
-		self.MasterTemplates[fileName] = otpl
-	}
-	*self.MasterTemplate, err = otpl.Clone(); if err != nil { panic(err) }
+func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *BaseControllerContainerTemplate {
+	var fileName string; var err error
+	var dat interface{} = nil
+	if len(args) >= 1 { fileName = args[0].(string) }
+	if len(args) >= 2 { dat = args[1] }
+	rawFile, fileName := self.defineTemplateCore(dat, fileName)
+	*self.MasterTemplate, err = template.New(fileName).Delims("@{", "}").Parse(string(rawFile)); if err != nil { panic(err) }
 	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
 	return self.ContainerTemplate
 }
@@ -184,4 +179,18 @@ func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,str
 	}
 	fileName = strings.TrimPrefix(file, self.ViewRootPath)
 	return file, fileName
+}
+func (self *BaseControllerContainer) defineTemplateCore(inputData interface{}, fileName string) (string, string) {
+	var output bytes.Buffer
+	var ok bool
+	var mt *template.Template
+	var err error
+	file, fileName := self.retriveAbsFile(fileName)
+	if mt, ok = self.MasterTemplates[fileName]; ! ok {
+		dat, err := os.ReadFile(file); if err != nil { panic(err) }
+		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
+		self.MasterTemplates[fileName] = mt
+	}
+	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
+	return output.String(), fileName
 }
