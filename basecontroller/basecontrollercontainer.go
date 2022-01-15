@@ -118,8 +118,16 @@ func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *
 	var dat interface{} = nil
 	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
-	rawFile, fileName := self.defineTemplateCore(dat, fileName)
-	*self.MasterTemplate, err = template.New(fileName).Delims("@{", "}").Parse(string(rawFile)); if err != nil { panic(err) }
+	funcMap := template.FuncMap {
+		"LoadFile": func(file string, datas ...interface{}) string {
+			var data interface{}
+			if len(datas) != 0 { data = datas[0] }
+			return self.defineMasterTemplateCore(data, file)
+		},
+	}
+	_, fileName = self.retriveAbsFile(fileName)
+	rawFile := self.defineMasterTemplateCore(dat, fileName)
+	*self.MasterTemplate, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
 	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
 	return self.ContainerTemplate
 }
@@ -180,7 +188,7 @@ func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,str
 	fileName = strings.TrimPrefix(file, self.ViewRootPath)
 	return file, fileName
 }
-func (self *BaseControllerContainer) defineTemplateCore(inputData interface{}, fileName string) (string, string) {
+func (self *BaseControllerContainer) defineMasterTemplateCore(inputData interface{}, fileName string) string {
 	var output bytes.Buffer
 	var ok bool
 	var mt *template.Template
@@ -192,5 +200,5 @@ func (self *BaseControllerContainer) defineTemplateCore(inputData interface{}, f
 		self.MasterTemplates[fileName] = mt
 	}
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
-	return output.String(), fileName
+	return output.String()
 }
