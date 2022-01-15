@@ -151,12 +151,11 @@ func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *
 	var dat interface{} = nil
 	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
+
+	// only for explicit declaration while Parse, chained by associated templates will overwite its functionality
+	// while calling on MasterView, its functionality will be overwritten by DefineTemplateByString
 	funcMap := template.FuncMap {
-		"LoadFile": func(file string, datas ...interface{}) string {
-			var data interface{}
-			if len(datas) != 0 { data = datas[0] }
-			return self.defineMasterTemplateCore(data, file)
-		},
+		"LoadFile": func() string { return "" },
 	}
 	_, fileName = self.retriveAbsFile(fileName)
 	rawFile := self.defineMasterTemplateCore(dat, fileName)
