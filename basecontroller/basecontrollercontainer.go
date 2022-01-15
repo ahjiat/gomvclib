@@ -9,6 +9,7 @@ import (
 	"strings"
 	"fmt"
 	"bytes"
+	"errors"
 )
 
 type BaseControllerContainerTemplate struct {
@@ -41,12 +42,41 @@ func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interf
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return output.String()
 }
-func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
+func (self *BaseControllerContainerTemplate) DefineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int) string {
+	var output,output2 bytes.Buffer
+	var ok bool
+	var mt *template.Template
+	var err error
+	file, fileName := self.retriveAbsFile(fileName)
+
+	if mt, ok = self.masterTemplates[fileName]; ! ok {
+		dat, err := os.ReadFile(file); if err != nil { panic(err) }
+		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
+		self.masterTemplates[fileName] = mt
+	}
+	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
+
 	funcMap := template.FuncMap {
-		"LoadFile": func(file string, datas ...interface{}) string {
+		"LoadFile": func(file string, datas ...interface{}) (string, error) {
 			var data interface{}
 			if len(datas) != 0 { data = datas[0] }
-			return self.DefineTemplateCore(data, file)
+			if loopLimitCount >= 100 {
+				return "", errors.New(`Error, infinity loop!, reached max recursive call to function "LoadFile"`)
+			}
+			return self.DefineTemplateCoreInternal(data, file, loopLimitCount + 1), nil
+		},
+	}
+	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
+	err = t.Execute(&output2, nil); if err != nil { panic(err) }
+
+	return output2.String()
+}
+func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
+	funcMap := template.FuncMap {
+		"LoadFile": func(file string, datas ...interface{}) (string, error) {
+			var data interface{}
+			if len(datas) != 0 { data = datas[0] }
+			return self.DefineTemplateCoreInternal(data, file, 0), nil
 		},
 	}
 	if _, err := self.tpl.New(name).Delims("@{", "}").Funcs(funcMap).Parse(body); err != nil { panic(err) }
