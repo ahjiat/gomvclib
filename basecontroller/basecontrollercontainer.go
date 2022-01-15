@@ -18,8 +18,11 @@ type BaseControllerContainerTemplate struct {
 	viewBasePath string
 	actionName string
 }
-func (self *BaseControllerContainerTemplate) DefineTemplate(name string, inputData interface{}, fileNames... string) *BaseControllerContainerTemplate {
-	return self.DefineTemplateByString(name, self.DefineTemplateCore(inputData, fileNames...))
+func (self *BaseControllerContainerTemplate) DefineTemplate(name string, args... interface{}) *BaseControllerContainerTemplate {
+	var fileName string; var dat interface{} = nil
+	if len(args) >= 1 { fileName = args[0].(string) }
+	if len(args) >= 2 { dat = args[1] }
+	return self.DefineTemplateByString(name, self.DefineTemplateCore(dat, fileName))
 }
 func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interface{}, fileNames... string) string {
 	var output bytes.Buffer
@@ -109,7 +112,7 @@ func (self *BaseControllerContainer) MasterView(args... interface{}) {
 	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
 	_, fileName = self.retriveAbsFile(fileName)
-	mst.DefineTemplate(fileName, dat, fileName)
+	mst.DefineTemplate(fileName, fileName, dat)
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
