@@ -127,12 +127,18 @@ func (self *BaseControllerContainer) Echo(value string, args ...interface{}) {
 func (self *BaseControllerContainer) GetUrlVar(s string) string {
 	return mux.Vars(self.Request)[s]
 }
-func (self *BaseControllerContainer) GetView(inputData interface{}, fileNames... string) string {
-	buff := self.getViewContent(inputData, fileNames...)
+func (self *BaseControllerContainer) GetView(args... interface{}) string {
+	var fileName string; var dat interface{} = nil
+	if len(args) >= 1 { fileName = args[0].(string) }
+	if len(args) >= 2 { dat = args[1] }
+	buff := self.getViewContent(dat, fileName)
 	return buff.String()
 }
-func (self *BaseControllerContainer) View(fileNames... string) {
-	buff := self.getViewContent(self.ViewBag, fileNames...)
+func (self *BaseControllerContainer) View(args... interface{}) {
+	var fileName string; var dat interface{} = nil
+	if len(args) >= 1 { fileName = args[0].(string) }
+	if len(args) >= 2 { dat = args[1] }; _ = dat
+	buff := self.getViewContent(self.ViewBag, fileName)
 	self.Response.Write(buff.Bytes())
 }
 func (self *BaseControllerContainer) MasterView(args... interface{}) {
@@ -182,12 +188,11 @@ func (self *BaseControllerContainer) ParseTemplate(inputData interface{}, conten
 	return output.String()
 }
 
-func (self *BaseControllerContainer) getViewContent(inputData interface{}, fileNames... string) bytes.Buffer {
-	var file, fileName string
+func (self *BaseControllerContainer) getViewContent(inputData interface{}, fileName string) bytes.Buffer {
+	var file string
 	var err error
 	var ok bool
 	var output bytes.Buffer
-	if len(fileNames) != 0 { fileName = fileNames[0] }
 
 	file, fileName = self.retriveAbsFile(fileName)
 	var tpl *template.Template
