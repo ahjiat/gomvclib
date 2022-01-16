@@ -8,7 +8,7 @@ import (
 	"text/template"
 )
 
-var ShareTemplates map[string]*template.Template = map[string]*template.Template{}
+var shareTemplates map[string]*template.Template = map[string]*template.Template{}
 
 type Route struct {
 	muxRouter *mux.Router
@@ -99,8 +99,8 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}, iRout
 	for _, row := range rc {
 		path := self.pathPrefix + row.Path
 		action := row.Action
-		mts := ShareTemplates
-		handler := RouteHandler{
+		mts := shareTemplates
+		handler := RouteHandler {
 			muxRouter:  self.muxRouter,
 			mainHandle: self.createHandle(&action, icontroller, mts, iRouteArgs),
 		}
