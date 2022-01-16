@@ -20,10 +20,11 @@ type BaseControllerContainerTemplate struct {
 	actionName string
 }
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, args... interface{}) *BaseControllerContainerTemplate {
-	var fileName string; var dat interface{} = nil
+	var fileName string; var dat interface{} = nil; var masterViewBag interface{} = nil
 	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
-	return self.DefineTemplateByString(name, self.DefineTemplateCore(dat, fileName))
+	if len(args) >= 3 { masterViewBag = args[2] }
+	return self.DefineTemplateByString(name, self.DefineTemplateCore(dat, fileName), masterViewBag)
 }
 func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interface{}, fileNames... string) string {
 	var output bytes.Buffer
@@ -42,7 +43,7 @@ func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interf
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return output.String()
 }
-func (self *BaseControllerContainerTemplate) DefineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int) string {
+func (self *BaseControllerContainerTemplate) DefineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int, mDat interface{}) string {
 	var output,output2 bytes.Buffer
 	var ok bool
 	var mt *template.Template
@@ -63,20 +64,20 @@ func (self *BaseControllerContainerTemplate) DefineTemplateCoreInternal(inputDat
 			if loopLimitCount >= 100 {
 				return "", errors.New(`Error, infinity loop!, reached max recursive call to function "LoadFile"`)
 			}
-			return self.DefineTemplateCoreInternal(data, file, loopLimitCount + 1), nil
+			return self.DefineTemplateCoreInternal(data, file, loopLimitCount + 1, mDat), nil
 		},
 	}
 	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
-	err = t.Execute(&output2, nil); if err != nil { panic(err) }
+	err = t.Execute(&output2, mDat); if err != nil { panic(err) }
 
 	return output2.String()
 }
-func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string) *BaseControllerContainerTemplate {
+func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string, body string, mDat interface{}) *BaseControllerContainerTemplate {
 	funcMap := template.FuncMap {
 		"LoadFile": func(file string, datas ...interface{}) (string, error) {
 			var data interface{}
 			if len(datas) != 0 { data = datas[0] }
-			return self.DefineTemplateCoreInternal(data, file, 0), nil
+			return self.DefineTemplateCoreInternal(data, file, 0, mDat), nil
 		},
 	}
 	if _, err := self.tpl.New(name).Delims("@{", "}").Funcs(funcMap).Parse(body); err != nil { panic(err) }
@@ -148,7 +149,7 @@ func (self *BaseControllerContainer) MasterView(args... interface{}) {
 	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
 	_, fileName = self.retriveAbsFile(fileName)
-	mst.DefineTemplate(fileName, fileName, dat)
+	mst.DefineTemplate(fileName, fileName, dat, self.MasterViewBag)
 	tpl := *self.MasterTemplate
 	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
 }
