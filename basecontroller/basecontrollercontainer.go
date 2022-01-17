@@ -43,7 +43,7 @@ func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interf
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return output.String()
 }
-func (self *BaseControllerContainerTemplate) DefineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int, mDat interface{}) string {
+func (self *BaseControllerContainerTemplate) defineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int, mDat interface{}) string {
 	var output,output2 bytes.Buffer
 	var ok bool
 	var mt *template.Template
@@ -64,7 +64,7 @@ func (self *BaseControllerContainerTemplate) DefineTemplateCoreInternal(inputDat
 			if loopLimitCount >= 100 {
 				return "", errors.New(`Error, infinity loop!, reached max recursive call to function "LoadFile"`)
 			}
-			return self.DefineTemplateCoreInternal(data, file, loopLimitCount + 1, mDat), nil
+			return self.defineTemplateCoreInternal(data, file, loopLimitCount + 1, mDat), nil
 		},
 	}
 	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
@@ -77,7 +77,7 @@ func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string,
 		"LoadFile": func(file string, datas ...interface{}) (string, error) {
 			var data interface{}
 			if len(datas) != 0 { data = datas[0] }
-			return self.DefineTemplateCoreInternal(data, file, 0, mDat), nil
+			return self.defineTemplateCoreInternal(data, file, 0, mDat), nil
 		},
 	}
 	if _, err := self.tpl.New(name).Delims("@{", "}").Funcs(funcMap).Parse(body); err != nil { panic(err) }
