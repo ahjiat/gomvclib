@@ -13,8 +13,6 @@ type RouteHandle struct {
 	pt paramtype
 	viewDirName string
 	viewDirPath string
-	controllerDirName string
-	controllerDirPath string
 	store direction
 	routePath string
 	iRouteArgs []interface{}

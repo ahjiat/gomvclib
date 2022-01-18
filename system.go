@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 	"github.com/ahjiat/gomvclib/global"
+	"path/filepath"
 )
 
 type RouteConfig struct {
@@ -78,11 +79,10 @@ func retrieveMethodParams(icontroller *interface{}, methodName string) (http_met
 	}
 	return getHttps, postHttps
 }
-func getBaseViewPath(icontroller *interface{}, controllerName string, viewName string) string {
+func getBaseViewPath(icontroller *interface{}, viewName string) string {
 	path := fmt.Sprintf("%T", *icontroller)
 	path = strings.Replace(path, "*", "", 1)
-	path = strings.Replace(path, ".", "/", -1)
-	path = strings.TrimPrefix(path, controllerName)
-	path = global.SysPath + "/" + viewName + path
+	path = path[ strings.LastIndex(path, ".")+1: ]
+	path = filepath.Join(global.SysPath, viewName, path)
 	return path
 }

@@ -18,8 +18,6 @@ type Route struct {
 	pt paramtype
 	viewDirName string
 	viewDirPath string
-	controllerDirName string
-	controllerDirPath string
 	routeChainConfig []RouteChainConfig
 }
 func (self *Route) SetViewDir(path string) *Route {
@@ -29,15 +27,6 @@ func (self *Route) SetViewDir(path string) *Route {
 	newRoute := *self
 	newRoute.viewDirPath = path
 	newRoute.viewDirName = name
-	return &newRoute
-}
-func (self *Route) SetControllerDir(path string) *Route {
-	name := path
-	path = global.SysPath + "/" + path 
-	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetControllerPath directory [" + path + "] not exist") }
-	newRoute := *self
-	newRoute.controllerDirPath = path
-	newRoute.controllerDirName = name
 	return &newRoute
 }
 func (self *Route) Domains(domains...string) *Route {
@@ -151,11 +140,9 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 			pt: self.pt,
 			viewDirName: self.viewDirName,
 			viewDirPath: self.viewDirPath,
-			controllerDirName: self.controllerDirName,
-			controllerDirPath: self.controllerDirPath,
 			store: direction{
 				&icontroller, &post, &get, action,
-				getBaseViewPath(&icontroller, self.controllerDirName, self.viewDirName),
+				getBaseViewPath(&icontroller, self.viewDirName),
 				mts, mts},
 			routePath: self.pathPrefix,
 			iRouteArgs: iRouteArgs,
