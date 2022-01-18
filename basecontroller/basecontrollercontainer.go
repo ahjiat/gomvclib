@@ -158,7 +158,7 @@ func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *
 	if len(args) >= 2 { dat = args[1] }
 
 	// only for explicit declaration while Parse, chained by associated templates will overwite its functionality
-	// while calling on MasterView, its functionality will be overwritten by DefineTemplateByString
+	// while calling on MasterView, its FuncMap will be overwritten by DefineTemplateByString
 	funcMap := template.FuncMap {
 		"LoadFile": func() string { return "" },
 	}
