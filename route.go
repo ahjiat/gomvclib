@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"os"
 	"text/template"
+	"path/filepath"
 )
 
 var shareTemplates map[string]*template.Template = map[string]*template.Template{}
@@ -22,7 +23,7 @@ type Route struct {
 }
 func (self *Route) SetViewDir(path string) *Route {
 	name := path
-	path = global.SysPath + "/" + path 
+	path = filepath.Join(global.SysPath, path)
 	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetViewPath directory [" + path + "] not exist") }
 	newRoute := *self
 	newRoute.viewDirPath = path
@@ -103,7 +104,7 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}, iRout
 func (self *Route) RouteByStaticDir(path string, dir string, defaultIndex string) {
 	r := self.PathPrefix(path)
 	if defaultIndex != "" {
-		r.Route(RouteConfig{"/{n:.*}", "Process"}, new(basecontroller.ServeStaticDir), dir, "/" + defaultIndex)
+		r.Route(RouteConfig{"/{n:.*}", "Process"}, new(basecontroller.ServeStaticDir), dir, global.SysPathSeparator + defaultIndex)
 	} else {
 		r.Route(RouteConfig{"/{n:.*}", "Process"}, new(basecontroller.ServeStaticDir), dir)
 	}
@@ -123,7 +124,7 @@ func (self *Route) RouteByController(path string, icontroller interface{}) {
 		if _, has := skipMethods[name]; has {
 			continue
 		}
-		lowcase := path + "/" + strings.ToLower(name)
+		lowcase := filepath.Join(path, strings.ToLower(name))
 		rc = append(rc, RouteConfig{Path: lowcase, Action: name})
 	}
 	self.Route(rc, icontroller)

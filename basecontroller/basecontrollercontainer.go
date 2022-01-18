@@ -3,6 +3,7 @@ package basecontroller
 import (
 	"net/http"
 	"text/template"
+	"github.com/ahjiat/gomvclib/global"
 	"github.com/gorilla/mux"
 	"os"
 	"path/filepath"
@@ -80,10 +81,10 @@ func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string,
 }
 func (self *BaseControllerContainerTemplate) retriveAbsFile(fileName string) (string,string) {
 	var file string
-	if strings.HasPrefix(fileName, "/") {
+	if strings.HasPrefix(fileName, global.SysPathSeparator) {
 		file = self.viewRootPath
 	} else {
-		file = self.viewBasePath + "/"
+		file = self.viewBasePath + global.SysPathSeparator
 	}
 	if fileName == "" {
 		fileName = self.actionName + ".html"
@@ -202,10 +203,10 @@ func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffe
 }
 func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,string) {
 	var file string
-	if strings.HasPrefix(fileName, "/") {
+	if strings.HasPrefix(fileName, global.SysPathSeparator) {
 		file = self.ViewRootPath
 	} else {
-		file = self.ViewBasePath + "/"
+		file = self.ViewBasePath + global.SysPathSeparator
 	}
 	if fileName == "" {
 		fileName = self.ActionName + ".html"
