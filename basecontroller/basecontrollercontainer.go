@@ -20,28 +20,23 @@ type BaseControllerContainerTemplate struct {
 	actionName string
 }
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, args... interface{}) *BaseControllerContainerTemplate {
+	var output bytes.Buffer
+	var ok bool
+	var t *template.Template
+	var err error
 	var fileName string; var dat interface{} = nil; var masterViewBag interface{} = nil
 	if len(args) >= 1 { fileName = args[0].(string) }
 	if len(args) >= 2 { dat = args[1] }
 	if len(args) >= 3 { masterViewBag = args[2] }
-	return self.DefineTemplateByString(name, self.DefineTemplateCore(dat, fileName), masterViewBag)
-}
-func (self *BaseControllerContainerTemplate) DefineTemplateCore(inputData interface{}, fileNames... string) string {
-	var output bytes.Buffer
-	var fileName string
-	var ok bool
-	var mt *template.Template
-	var err error
-	if len(fileNames) != 0 { fileName = fileNames[0] }
-	file, fileName := self.retriveAbsFile(fileName)
 
-	if mt, ok = self.masterTemplates[fileName]; ! ok {
-		dat, err := os.ReadFile(file); if err != nil { panic(err) }
-		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
-		self.masterTemplates[fileName] = mt
+	file, fileName := self.retriveAbsFile(fileName)
+	if t, ok = self.masterTemplates[fileName]; ! ok {
+		rawFile, err := os.ReadFile(file); if err != nil { panic(err) }
+		t, err = template.New(fileName).Delims("@[", "]").Parse(string(rawFile)); if err != nil { panic(err) }
+		self.masterTemplates[fileName] = t
 	}
-	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
-	return output.String()
+	err = t.Execute(&output, dat); if err != nil { panic(err) }
+	return self.DefineTemplateByString(name, output.String(), masterViewBag)
 }
 func (self *BaseControllerContainerTemplate) defineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int, mDat interface{}) string {
 	var output,output2 bytes.Buffer
