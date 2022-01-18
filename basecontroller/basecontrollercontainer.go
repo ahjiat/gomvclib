@@ -128,18 +128,16 @@ func (self *BaseControllerContainer) Echo(value string, args ...interface{}) {
 func (self *BaseControllerContainer) GetUrlVar(s string) string {
 	return mux.Vars(self.Request)[s]
 }
-func (self *BaseControllerContainer) GetView(args... interface{}) string {
-	var fileName string; var dat interface{} = nil
-	if len(args) >= 1 { fileName = args[0].(string) }
-	if len(args) >= 2 { dat = args[1] }
-	buff := self.getViewContent(dat, fileName)
+func (self *BaseControllerContainer) GetView(fileNames... string) string {
+	var fileName string
+	if len(fileNames) >= 1 { fileName =  fileNames[0] }
+	buff := self.getViewContent(fileName)
 	return buff.String()
 }
-func (self *BaseControllerContainer) View(args... interface{}) {
-	var fileName string; var dat interface{} = nil
-	if len(args) >= 1 { fileName = args[0].(string) }
-	if len(args) >= 2 { dat = args[1] }; _ = dat
-	buff := self.getViewContent(dat, fileName)
+func (self *BaseControllerContainer) View(fileNames... string) {
+	var fileName string
+	if len(fileNames) >= 1 { fileName =  fileNames[0] }
+	buff := self.getViewContent(fileName)
 	self.Response.Write(buff.Bytes())
 }
 func (self *BaseControllerContainer) MasterView(args... interface{}) {
@@ -189,18 +187,24 @@ func (self *BaseControllerContainer) ParseTemplate(inputData interface{}, conten
 	return output.String()
 }
 
-func (self *BaseControllerContainer) getViewContent(inputData interface{}, fileName string) bytes.Buffer {
+func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffer {
 	var output bytes.Buffer
-	rawFile := self.defineMasterTemplateCore(inputData, fileName)
-	funcMap := template.FuncMap {
-		"LoadFile": func(file string, datas ...interface{}) (string, error) {
-			var data interface{}
-			if len(datas) != 0 { data = datas[0] }
-			return self.defineTemplateCoreInternal(data, file, 0, self.ViewBag), nil
-		},
+	var tpl *template.Template
+	var ok bool
+	file, fileName := self.retriveAbsFile(fileName)
+	if tpl, ok = self.Templates[fileName]; ! ok {
+		rawFile, err := os.ReadFile(file); if err != nil { panic(err) }
+		funcMap := template.FuncMap {
+			"LoadFile": func(file string, datas ...interface{}) (string, error) {
+				var data interface{}
+				if len(datas) != 0 { data = datas[0] }
+				return self.defineTemplateCoreInternal(data, file, 0, self.ViewBag), nil
+			},
+		}
+		tpl, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
+		self.Templates[fileName] = tpl
 	}
-	t, err := template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
-	err = t.Execute(&output, self.ViewBag); if err != nil { panic(err) }
+	err := tpl.Execute(&output, self.ViewBag); if err != nil { panic(err) }
 	return output
 }
 func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,string) {
