@@ -195,10 +195,8 @@ func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffe
 	if tpl, ok = self.Templates[fileName]; ! ok {
 		rawFile, err := os.ReadFile(file); if err != nil { panic(err) }
 		funcMap := template.FuncMap {
-			"LoadFile": func(file string, datas ...interface{}) (string, error) {
-				var data interface{}
-				if len(datas) != 0 { data = datas[0] }
-				return self.defineTemplateCoreInternal(data, file, 0, self.ViewBag), nil
+			"LoadFile": func(file string) (string, error) {
+				return self.defineViewTemplateCoreInternal(file, 0), nil
 			},
 		}
 		tpl, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
@@ -239,32 +237,26 @@ func (self *BaseControllerContainer) defineMasterTemplateCore(inputData interfac
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	return output.String()
 }
-func (self *BaseControllerContainer) defineTemplateCoreInternal(inputData interface{}, fileName string, loopLimitCount int, mDat interface{}) string {
-	var output,output2 bytes.Buffer
+func (self *BaseControllerContainer) defineViewTemplateCoreInternal(fileName string, loopLimitCount int) string {
+	var output bytes.Buffer
 	var ok bool
-	var mt *template.Template
+	var tpl *template.Template
 	var err error
+
 	file, fileName := self.retriveAbsFile(fileName)
-
-	if mt, ok = self.MasterTemplates[fileName]; ! ok {
-		dat, err := os.ReadFile(file); if err != nil { panic(err) }
-		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
-		self.MasterTemplates[fileName] = mt
+	if tpl, ok = self.Templates[fileName]; ! ok {
+		rawFile, err := os.ReadFile(file); if err != nil { panic(err) }
+		funcMap := template.FuncMap {
+			"LoadFile": func(file string) (string, error) {
+				if loopLimitCount >= 100 {
+					return "", errors.New(`Error, infinity loop!, reached max recursive call to function "LoadFile"`)
+				}
+				return self.defineViewTemplateCoreInternal(file, loopLimitCount + 1), nil
+			},
+		}
+		tpl, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
+		self.Templates[fileName] = tpl
 	}
-	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
-
-	funcMap := template.FuncMap {
-		"LoadFile": func(file string, datas ...interface{}) (string, error) {
-			var data interface{}
-			if len(datas) != 0 { data = datas[0] }
-			if loopLimitCount >= 100 {
-				return "", errors.New(`Error, infinity loop!, reached max recursive call to function "LoadFile"`)
-			}
-			return self.defineTemplateCoreInternal(data, file, loopLimitCount + 1, mDat), nil
-		},
-	}
-	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
-	err = t.Execute(&output2, mDat); if err != nil { panic(err) }
-
-	return output2.String()
+	err = tpl.Execute(&output, self.ViewBag); if err != nil { panic(err) }
+	return output.String()
 }
