@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"bytes"
 	"errors"
+	"syscall"
 )
 
 type BaseControllerContainerTemplate struct {
@@ -145,7 +146,7 @@ func (self *BaseControllerContainer) MasterView(args... interface{}) {
 	_, fileName = self.retriveAbsFile(fileName)
 	mst.DefineTemplate(fileName, fileName, dat, self.MasterViewBag)
 	tpl := *self.MasterTemplate
-	err := tpl.Execute(self.Response, self.MasterViewBag); if err != nil { panic(err) }
+	if err := tpl.Execute(self.Response, self.MasterViewBag); err != nil  && ! errors.Is(err, syscall.EPIPE) { panic(err) }
 }
 func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *BaseControllerContainerTemplate {
 	var fileName string; var err error
