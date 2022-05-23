@@ -29,7 +29,7 @@ func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []s
 
 	for _, domain := range domains {
 		if(domain == "") { continue }
-		routes = append(routes, self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Host(domain))
+		routes = append(routes, self.muxRouteExactly(path, self.mainRouteHandler).Host(domain))
 	}
 
 	if len(methods) > 0 {
@@ -38,11 +38,11 @@ func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []s
 				route.Methods(methods...)
 			}
 		} else {
-			routes = append(routes, self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler).Methods(methods...))
+			routes = append(routes, self.muxRouteExactly(path, self.mainRouteHandler).Methods(methods...))
 		}
 	}
 
-	if len(routes) == 0 { self.muxRouteExactly(path+"{n:\\/?}", self.mainRouteHandler) }
+	if len(routes) == 0 { self.muxRouteExactly(path, self.mainRouteHandler) }
 }
 func (self *RouteHandler) muxRouteExactly(path string, f func (http.ResponseWriter, *http.Request)) *mux.Route {
 	return self.muxRouter.HandleFunc(path, f)
