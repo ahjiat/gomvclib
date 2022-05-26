@@ -20,6 +20,7 @@ type Route struct {
 	viewDirName string
 	viewDirPath string
 	routeChainConfig []RouteChainConfig
+	ViewFuncMap template.FuncMap
 }
 func (self *Route) SetViewDir(path string) *Route {
 	name := path
@@ -43,6 +44,12 @@ func (self *Route) PathPrefix(path string) *Route {
 func (self *Route) Methods(methods...string) *Route {
 	newRoute := *self
 	newRoute.methods = methods
+	return &newRoute
+}
+func (self *Route) SetViewFuncMap(funcMap map[string]any) *Route {
+	newRoute := *self
+	newRoute.ViewFuncMap = template.FuncMap{}
+	for k, f := range funcMap { newRoute.ViewFuncMap[k] = f }
 	return &newRoute
 }
 func (self *Route) SupportParameters(in ...interface{}) *Route {
@@ -137,6 +144,8 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 			errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
 		}
 		get, post := retrieveMethodParams(&icontroller, *action)
+		cloneViewFuncMap := template.FuncMap{}
+		if self.ViewFuncMap != nil { for k, f := range self.ViewFuncMap { cloneViewFuncMap[k] = f } }
 		return &RouteHandle {
 			pt: self.pt,
 			viewDirName: self.viewDirName,
@@ -147,5 +156,6 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 				mts, mts},
 			routePath: self.pathPrefix,
 			iRouteArgs: iRouteArgs,
+			viewFuncMap: cloneViewFuncMap,
 		}
 }

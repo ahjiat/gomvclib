@@ -20,6 +20,7 @@ type BaseControllerContainerTemplate struct {
 	viewRootPath string
 	viewBasePath string
 	actionName string
+	viewFuncMap template.FuncMap
 }
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, args... interface{}) *BaseControllerContainerTemplate {
 	var output bytes.Buffer
@@ -64,6 +65,7 @@ func (self *BaseControllerContainerTemplate) defineTemplateCoreInternal(inputDat
 			return self.defineTemplateCoreInternal(data, file, loopLimitCount + 1, mDat), nil
 		},
 	}
+	for k, f := range self.viewFuncMap { funcMap[k] = f }
 	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
 	err = t.Execute(&output2, mDat); if err != nil { panic(err) }
 
@@ -77,6 +79,7 @@ func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string,
 			return self.defineTemplateCoreInternal(data, file, 0, mDat), nil
 		},
 	}
+	for k, f := range self.viewFuncMap { funcMap[k] = f }
 	if _, err := self.tpl.New(name).Delims("@{", "}").Funcs(funcMap).Parse(body); err != nil { panic(err) }
 	return self
 }
@@ -117,6 +120,7 @@ type BaseControllerContainer struct {
 	MasterTemplate **template.Template
 	RoutePath string
 	IRouteArgs []interface{}
+	ViewFuncMap template.FuncMap
 }
 func (self *BaseControllerContainer) Echo(value string, args ...interface{}) {
 	if len(args) == 0 { self.Response.Write([]byte(value)); return }
@@ -163,10 +167,11 @@ func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *
 	funcMap := template.FuncMap {
 		"LoadFile": func() string { return "" },
 	}
+	for k, f := range self.ViewFuncMap { funcMap[k] = f }
 	_, fileName = self.retriveAbsFile(fileName)
 	rawFile := self.defineMasterTemplateCore(dat, fileName)
 	*self.MasterTemplate, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
-	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName, self.ViewFuncMap}
 	return self.ContainerTemplate
 }
 func (self *BaseControllerContainer) RemoveMasterTemplate() {
@@ -174,7 +179,7 @@ func (self *BaseControllerContainer) RemoveMasterTemplate() {
 }
 func (self *BaseControllerContainer) GetMasterView() (*BaseControllerContainerTemplate, bool) {
 	if *self.MasterTemplate == nil { return nil, false }
-	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName, self.ViewFuncMap}
 	return self.ContainerTemplate, true
 }
 func (self *BaseControllerContainer) RouteNext(args... interface{}) {
@@ -200,6 +205,7 @@ func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffe
 				return self.defineViewTemplateCoreInternal(file, 0), nil
 			},
 		}
+		for k, f := range self.ViewFuncMap { funcMap[k] = f }
 		tpl, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
 		self.Templates[fileName] = tpl
 	}
@@ -255,6 +261,7 @@ func (self *BaseControllerContainer) defineViewTemplateCoreInternal(fileName str
 				return self.defineViewTemplateCoreInternal(file, loopLimitCount + 1), nil
 			},
 		}
+		for k, f := range self.ViewFuncMap { funcMap[k] = f }
 		tpl, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
 		self.Templates[fileName] = tpl
 	}

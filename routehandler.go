@@ -16,6 +16,7 @@ type RouteHandle struct {
 	store direction
 	routePath string
 	iRouteArgs []interface{}
+	viewFuncMap template.FuncMap
 }
 
 type RouteHandler struct {
@@ -78,6 +79,7 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		MasterTemplate: mtPtr,
 		RoutePath: handle.routePath,
 		IRouteArgs: handle.iRouteArgs,
+		ViewFuncMap: handle.viewFuncMap,
 	}
 	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(instance)))
 
