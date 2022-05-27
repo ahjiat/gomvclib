@@ -46,9 +46,17 @@ func (self *Route) Methods(methods...string) *Route {
 	newRoute.methods = methods
 	return &newRoute
 }
-func (self *Route) SetViewFuncMap(funcMap map[string]any) *Route {
+func (self *Route) SetViewFunc(funcMap map[string]any) *Route {
 	newRoute := *self
 	newRoute.ViewFuncMap = template.FuncMap{}
+	for k, f := range funcMap { newRoute.ViewFuncMap[k] = f }
+	return &newRoute
+}
+func (self *Route) AddViewFunc(funcMap map[string]any) *Route {
+	newRoute := *self
+	if newRoute.ViewFuncMap == nil {
+		newRoute.ViewFuncMap = template.FuncMap{}
+	}
 	for k, f := range funcMap { newRoute.ViewFuncMap[k] = f }
 	return &newRoute
 }
