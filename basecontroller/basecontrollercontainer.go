@@ -21,6 +21,7 @@ type BaseControllerContainerTemplate struct {
 	viewBasePath string
 	actionName string
 	viewFuncMap template.FuncMap
+	baseControllerContainer *BaseControllerContainer
 }
 func (self *BaseControllerContainerTemplate) DefineTemplate(name string, args... interface{}) *BaseControllerContainerTemplate {
 	var output bytes.Buffer
@@ -64,6 +65,9 @@ func (self *BaseControllerContainerTemplate) defineTemplateCoreInternal(inputDat
 			}
 			return self.defineTemplateCoreInternal(data, file, loopLimitCount + 1, mDat), nil
 		},
+		"GetViewBase": func() *BaseControllerContainer {
+			return self.baseControllerContainer
+		},
 	}
 	for k, f := range self.viewFuncMap { funcMap[k] = f }
 	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
@@ -77,6 +81,9 @@ func (self *BaseControllerContainerTemplate) DefineTemplateByString(name string,
 			var data interface{}
 			if len(datas) != 0 { data = datas[0] }
 			return self.defineTemplateCoreInternal(data, file, 0, mDat), nil
+		},
+		"GetViewBase": func() *BaseControllerContainer {
+			return self.baseControllerContainer
 		},
 	}
 	for k, f := range self.viewFuncMap { funcMap[k] = f }
@@ -166,12 +173,15 @@ func (self *BaseControllerContainer) CreateMasterTemplate(args... interface{}) *
 	// while calling on MasterView, its FuncMap will be overwritten by DefineTemplateByString
 	funcMap := template.FuncMap {
 		"LoadFile": func() string { return "" },
+		"GetViewBase": func() *BaseControllerContainer {
+			return self
+		},
 	}
 	for k, f := range self.ViewFuncMap { funcMap[k] = f }
 	_, fileName = self.retriveAbsFile(fileName)
 	rawFile := self.defineMasterTemplateCore(dat, fileName)
 	*self.MasterTemplate, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
-	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName, self.ViewFuncMap}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName, self.ViewFuncMap, self}
 	return self.ContainerTemplate
 }
 func (self *BaseControllerContainer) RemoveMasterTemplate() {
@@ -179,7 +189,7 @@ func (self *BaseControllerContainer) RemoveMasterTemplate() {
 }
 func (self *BaseControllerContainer) GetMasterView() (*BaseControllerContainerTemplate, bool) {
 	if *self.MasterTemplate == nil { return nil, false }
-	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName, self.ViewFuncMap}
+	self.ContainerTemplate = &BaseControllerContainerTemplate{self.MasterTemplates, *self.MasterTemplate, self.ViewRootPath, self.ViewBasePath, self.ActionName, self.ViewFuncMap, self}
 	return self.ContainerTemplate, true
 }
 func (self *BaseControllerContainer) RouteNext(args... interface{}) {
@@ -204,6 +214,9 @@ func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffe
 			"LoadFile": func(file string) (string, error) {
 				return self.defineViewTemplateCoreInternal(file, 0), nil
 			},
+			"GetViewBase": func() *BaseControllerContainer {
+				return self
+			},
 		}
 		for k, f := range self.ViewFuncMap { funcMap[k] = f }
 		tpl, err = template.New(fileName).Delims("@{", "}").Funcs(funcMap).Parse(string(rawFile)); if err != nil { panic(err) }
@@ -211,6 +224,21 @@ func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffe
 	}
 	err := tpl.Execute(&output, self.ViewBag); if err != nil { panic(err) }
 	return output
+}
+func (self *BaseControllerContainer) RetriveAbsFile(fileName string) (string,string) {
+	var file string
+	if strings.HasPrefix(fileName, global.SysPathSeparator) {
+		file = self.ViewRootPath
+	} else {
+		file = self.ViewBasePath + global.SysPathSeparator
+	}
+	if fileName == "" {
+		fileName = self.ActionName + ".html"
+	}
+	file += fileName
+
+	fileName = strings.TrimPrefix(file, self.ViewRootPath)
+	return file, fileName
 }
 func (self *BaseControllerContainer) retriveAbsFile(fileName string) (string,string) {
 	var file string
@@ -238,6 +266,9 @@ func (self *BaseControllerContainer) defineMasterTemplateCore(inputData interfac
 	file, fileName := self.retriveAbsFile(fileName)
 	if mt, ok = self.MasterTemplates[fileName]; ! ok {
 		dat, err := os.ReadFile(file); if err != nil { panic(err) }
+		//funcMap := template.FuncMap {}
+		//for k, f := range self.ViewFuncMap { funcMap[k] = f }
+		//mt, err = template.New(fileName).Delims("@[", "]").Funcs(funcMap).Parse(string(dat)); if err != nil { panic(err) }
 		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
 		self.MasterTemplates[fileName] = mt
 	}
@@ -259,6 +290,9 @@ func (self *BaseControllerContainer) defineViewTemplateCoreInternal(fileName str
 					return "", errors.New(`Error, infinity loop!, reached max recursive call to function "LoadFile"`)
 				}
 				return self.defineViewTemplateCoreInternal(file, loopLimitCount + 1), nil
+			},
+			"GetViewBase": func() *BaseControllerContainer {
+				return self
 			},
 		}
 		for k, f := range self.ViewFuncMap { funcMap[k] = f }
