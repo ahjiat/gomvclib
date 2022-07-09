@@ -266,10 +266,9 @@ func (self *BaseControllerContainer) defineMasterTemplateCore(inputData interfac
 	file, fileName := self.retriveAbsFile(fileName)
 	if mt, ok = self.MasterTemplates[fileName]; ! ok {
 		dat, err := os.ReadFile(file); if err != nil { panic(err) }
-		//funcMap := template.FuncMap {}
-		//for k, f := range self.ViewFuncMap { funcMap[k] = f }
-		//mt, err = template.New(fileName).Delims("@[", "]").Funcs(funcMap).Parse(string(dat)); if err != nil { panic(err) }
-		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
+		funcMap := template.FuncMap {}
+		for k, f := range self.ViewFuncMap { funcMap[k] = f }
+		mt, err = template.New(fileName).Delims("@[", "]").Funcs(funcMap).Parse(string(dat)); if err != nil { panic(err) }
 		self.MasterTemplates[fileName] = mt
 	}
 	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
