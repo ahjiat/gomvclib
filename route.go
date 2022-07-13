@@ -23,8 +23,8 @@ type Route struct {
 	ViewFuncMap template.FuncMap
 }
 func (self *Route) SetViewDir(path string) *Route {
-	name := path
 	path = filepath.Join(global.SysPath, path)
+	name := filepath.Base(path)
 	if _, err := os.Stat(path); os.IsNotExist(err) { errorLog("SetViewPath directory [" + path + "] not exist") }
 	newRoute := *self
 	newRoute.viewDirPath = path
