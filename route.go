@@ -160,7 +160,7 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 			viewDirPath: self.viewDirPath,
 			store: direction{
 				&icontroller, &post, &get, action,
-				getBaseViewPath(&icontroller, self.viewDirName),
+				getBaseViewPath(&icontroller, self.viewDirName, self.viewDirPath),
 				mts, mts},
 			routePath: self.pathPrefix,
 			iRouteArgs: iRouteArgs,

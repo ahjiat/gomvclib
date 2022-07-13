@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
-	"github.com/ahjiat/gomvclib/global"
 	"path/filepath"
 )
 
@@ -79,10 +78,10 @@ func retrieveMethodParams(icontroller *interface{}, methodName string) (http_met
 	}
 	return getHttps, postHttps
 }
-func getBaseViewPath(icontroller *interface{}, viewName string) string {
+func getBaseViewPath(icontroller *interface{}, viewName string, viewDirPath string) string {
 	path := fmt.Sprintf("%T", *icontroller)
 	path = strings.Replace(path, "*", "", 1)
 	path = path[ strings.LastIndex(path, ".")+1: ]
-	path = filepath.Join(global.SysPath, viewName, path)
+	path = filepath.Join(filepath.Dir(viewDirPath), viewName, path)
 	return path
 }
