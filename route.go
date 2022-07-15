@@ -144,6 +144,29 @@ func (self *Route) RouteByController(path string, icontroller interface{}) {
 	}
 	self.Route(rc, icontroller)
 }
+func (self *Route) RouteByControllerWithDefaultIndex(path string, icontroller interface{}) {
+	if ! isFieldExist(&icontroller, "Base") {
+		errorLog("Web.RouteConfig, controller:%T missing 'BaseController' ", icontroller)
+	}
+	baseMethods := listAllMethods(new(basecontroller.BaseController))
+	skipMethods := map[string]int{}
+	for _, v := range baseMethods {
+		skipMethods[v] = 1
+	}
+	methods := listAllMethods(icontroller)
+	rc := []RouteConfig{}
+	for _, name := range methods {
+		if name == "Index" {
+			rc = append(rc, RouteConfig{Path: path, Action: name})
+			continue
+		} else if _, has := skipMethods[name]; has {
+			continue
+		}
+		lowcase := filepath.Join(path, strings.ToLower(name))
+		rc = append(rc, RouteConfig{Path: lowcase, Action: name})
+	}
+	self.Route(rc, icontroller)
+}
 func (self *Route) createHandle(action *string, icontroller interface{}, mts map[string]*template.Template, iRouteArgs []interface{}) *RouteHandle {
 		if !isMethodExist(&icontroller, *action) {
 			errorLog("Web.RouteConfig, controller:%T action:%s not found! ", icontroller, *action)
