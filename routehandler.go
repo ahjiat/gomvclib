@@ -17,12 +17,14 @@ type RouteHandle struct {
 	routePath string
 	iRouteArgs []interface{}
 	viewFuncMap template.FuncMap
+	attributeStr string
 }
 
 type RouteHandler struct {
 	muxRouter *mux.Router
 	mainHandle *RouteHandle
 	middlewareHandle []*RouteHandle
+	attributeStr string
 }
 func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []string) {
 	if(path == "") { return }

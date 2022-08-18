@@ -7,6 +7,9 @@ import (
 	"os"
 	"text/template"
 	"path/filepath"
+	"go/doc"
+    "go/parser"
+    "go/token"
 )
 
 var shareTemplates map[string]*template.Template = map[string]*template.Template{}
@@ -21,6 +24,7 @@ type Route struct {
 	viewDirPath string
 	routeChainConfig []RouteChainConfig
 	ViewFuncMap template.FuncMap
+	actionAttributeMap  map[string]map[string]string
 }
 func (self *Route) SetViewDir(path string) *Route {
 	path = filepath.Join(global.SysPath, path)
@@ -50,6 +54,33 @@ func (self *Route) SetViewFunc(funcMap map[string]any) *Route {
 	newRoute := *self
 	newRoute.ViewFuncMap = template.FuncMap{}
 	for k, f := range funcMap { newRoute.ViewFuncMap[k] = f }
+	return &newRoute
+}
+func (self *Route) EnableAttribute(dir string) *Route {
+	newRoute := *self
+
+	newRoute.actionAttributeMap = make(map[string]map[string]string)
+
+	fset := token.NewFileSet()
+	d, err := parser.ParseDir(fset, dir, nil, parser.ParseComments); if err != nil {
+        panic(err)
+    }
+
+	for _, f := range d {
+        p := doc.New(f, "./", 2)
+		for _, t := range p.Types {
+			var found bool
+			var ctrlName map[string]string
+			if ctrlName, found = newRoute.actionAttributeMap[t.Name]; !found {
+				ctrlName = make(map[string]string)
+				newRoute.actionAttributeMap[t.Name] = ctrlName
+			}
+			for _, f := range t.Methods {
+				ctrlName[f.Name] = strings.TrimSpace(f.Doc)
+            }
+        }
+	}
+
 	return &newRoute
 }
 func (self *Route) AddViewFunc(funcMap map[string]any) *Route {
@@ -177,6 +208,7 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 		get, post := retrieveMethodParams(&icontroller, *action)
 		cloneViewFuncMap := template.FuncMap{}
 		if self.ViewFuncMap != nil { for k, f := range self.ViewFuncMap { cloneViewFuncMap[k] = f } }
+
 		return &RouteHandle {
 			pt: self.pt,
 			viewDirName: self.viewDirName,
@@ -188,5 +220,10 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 			routePath: self.pathPrefix,
 			iRouteArgs: iRouteArgs,
 			viewFuncMap: cloneViewFuncMap,
+			attributeStr: self.getAttribute(getTypeName(icontroller), *action),
 		}
+}
+func (self *Route) getAttribute(ctrlName string, action string) string {
+	actMap := self.actionAttributeMap[ctrlName]
+	return actMap[action]
 }

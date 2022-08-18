@@ -52,6 +52,13 @@ func isFieldExist(icontroller *interface{}, name string) bool {
 	_, ok := vt.FieldByName(name);
 	return ok
 }
+func getTypeName(icontroller interface{}) string {
+	if t := reflect.TypeOf(icontroller); t.Kind() == reflect.Ptr {
+        return t.Elem().Name()
+    } else {
+        return t.Name()
+    }
+}
 func retrieveMethodParams(icontroller *interface{}, methodName string) (http_method, http_method) {
 	method := reflect.ValueOf(*icontroller).MethodByName(methodName)
 	getHttps := http_method{}
