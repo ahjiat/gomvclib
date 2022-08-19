@@ -10,6 +10,8 @@ import (
 	"go/doc"
     "go/parser"
     "go/token"
+	"encoding/json"
+	"reflect"
 )
 
 var shareTemplates map[string]*template.Template = map[string]*template.Template{}
@@ -24,7 +26,7 @@ type Route struct {
 	viewDirPath string
 	routeChainConfig []RouteChainConfig
 	ViewFuncMap template.FuncMap
-	actionAttributeMap  map[string]map[string]string
+	actionAttributeMap  map[string]map[string]global.Attribute
 }
 func (self *Route) SetViewDir(path string) *Route {
 	path = filepath.Join(global.SysPath, path)
@@ -56,27 +58,35 @@ func (self *Route) SetViewFunc(funcMap map[string]any) *Route {
 	for k, f := range funcMap { newRoute.ViewFuncMap[k] = f }
 	return &newRoute
 }
-func (self *Route) EnableAttribute(dir string) *Route {
+func (self *Route) EnableAttribute(dir string, idata interface{}) *Route {
 	newRoute := *self
 
-	newRoute.actionAttributeMap = make(map[string]map[string]string)
-
+	newRoute.actionAttributeMap = make(map[string]map[string]global.Attribute)
 	fset := token.NewFileSet()
 	d, err := parser.ParseDir(fset, dir, nil, parser.ParseComments); if err != nil {
-        panic(err)
+		errorLog("EnableAttribute: %s", err.Error())
     }
 
 	for _, f := range d {
         p := doc.New(f, "./", 2)
 		for _, t := range p.Types {
 			var found bool
-			var ctrlName map[string]string
-			if ctrlName, found = newRoute.actionAttributeMap[t.Name]; !found {
-				ctrlName = make(map[string]string)
-				newRoute.actionAttributeMap[t.Name] = ctrlName
+			var actName map[string]global.Attribute
+			if actName, found = newRoute.actionAttributeMap[t.Name]; !found {
+				actName = make(map[string]global.Attribute)
+				newRoute.actionAttributeMap[t.Name] = actName
 			}
 			for _, f := range t.Methods {
-				ctrlName[f.Name] = strings.TrimSpace(f.Doc)
+				message := strings.TrimSpace(f.Doc)
+				if message == "" { continue }
+
+				newCarry := reflect.New(reflect.TypeOf(idata).Elem())
+				//newCarry.Elem().Set(reflect.ValueOf(idata).Elem())
+				if err := json.Unmarshal([]byte(message), newCarry.Interface()); err != nil {
+					errorLog("EnableAttribute %s", err.Error())
+				}
+
+				actName[f.Name] = global.Attribute{ Message:message, IData:newCarry.Interface() }
             }
         }
 	}
@@ -136,13 +146,14 @@ func (self *Route) Route(routeConfig interface{}, icontroller interface{}, iRout
 		path := self.pathPrefix + row.Path
 		action := row.Action
 		mts := shareTemplates
+		baseAttrPtr := new(*global.Attribute)
 		handler := RouteHandler {
 			muxRouter:  self.muxRouter,
-			mainHandle: self.createHandle(&action, icontroller, mts, iRouteArgs),
+			mainHandle: self.createHandle(&action, icontroller, mts, iRouteArgs, baseAttrPtr),
 		}
 		for i, _ := range self.routeChainConfig {
 			config := self.routeChainConfig[i]
-			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mts, iRouteArgs))
+			handler.middlewareHandle = append(handler.middlewareHandle, self.createHandle(&config.Action, config.Controller, mts, iRouteArgs, baseAttrPtr))
 		}
 		handler.addMuxRoute(path, self.domains, self.methods)
 	}
@@ -198,7 +209,7 @@ func (self *Route) RouteByControllerWithDefaultIndex(path string, icontroller in
 	}
 	self.Route(rc, icontroller)
 }
-func (self *Route) createHandle(action *string, icontroller interface{}, mts map[string]*template.Template, iRouteArgs []interface{}) *RouteHandle {
+func (self *Route) createHandle(action *string, icontroller interface{}, mts map[string]*template.Template, iRouteArgs []interface{}, baseAttrPtr **global.Attribute) *RouteHandle {
 		if !isMethodExist(&icontroller, *action) {
 			errorLog("Web.RouteConfig, controller:%T action:%s not found! ", icontroller, *action)
 		}
@@ -208,6 +219,11 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 		get, post := retrieveMethodParams(&icontroller, *action)
 		cloneViewFuncMap := template.FuncMap{}
 		if self.ViewFuncMap != nil { for k, f := range self.ViewFuncMap { cloneViewFuncMap[k] = f } }
+
+		if *baseAttrPtr == nil {
+			*baseAttrPtr = new(global.Attribute)
+			**baseAttrPtr = self.getAttribute(getTypeName(icontroller), *action)
+		}
 
 		return &RouteHandle {
 			pt: self.pt,
@@ -220,10 +236,10 @@ func (self *Route) createHandle(action *string, icontroller interface{}, mts map
 			routePath: self.pathPrefix,
 			iRouteArgs: iRouteArgs,
 			viewFuncMap: cloneViewFuncMap,
-			attributeStr: self.getAttribute(getTypeName(icontroller), *action),
+			attr: **baseAttrPtr,
 		}
 }
-func (self *Route) getAttribute(ctrlName string, action string) string {
+func (self *Route) getAttribute(ctrlName string, action string) global.Attribute {
 	actMap := self.actionAttributeMap[ctrlName]
 	return actMap[action]
 }

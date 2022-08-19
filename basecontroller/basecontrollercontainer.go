@@ -128,6 +128,10 @@ type BaseControllerContainer struct {
 	RoutePath string
 	IRouteArgs []interface{}
 	ViewFuncMap template.FuncMap
+	Attribute global.Attribute
+}
+func (self *BaseControllerContainer) GetAttribute() (string, interface{}) {
+	return self.Attribute.Message, self.Attribute.IData
 }
 func (self *BaseControllerContainer) Echo(value string, args ...interface{}) {
 	if len(args) == 0 { self.Response.Write([]byte(value)); return }

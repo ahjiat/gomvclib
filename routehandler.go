@@ -1,6 +1,7 @@
 package Web
 import (
 	"net/http"
+	"github.com/ahjiat/gomvclib/global"
 	"github.com/gorilla/mux"
 	"reflect"
 	"strconv"
@@ -17,14 +18,13 @@ type RouteHandle struct {
 	routePath string
 	iRouteArgs []interface{}
 	viewFuncMap template.FuncMap
-	attributeStr string
+	attr global.Attribute
 }
 
 type RouteHandler struct {
 	muxRouter *mux.Router
 	mainHandle *RouteHandle
 	middlewareHandle []*RouteHandle
-	attributeStr string
 }
 func (self *RouteHandler) addMuxRoute(path string, domains []string, methods []string) {
 	if(path == "") { return }
@@ -82,6 +82,7 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 		RoutePath: handle.routePath,
 		IRouteArgs: handle.iRouteArgs,
 		ViewFuncMap: handle.viewFuncMap,
+		Attribute: handle.attr,
 	}
 	v.Elem().FieldByName("Base").Set(reflect.ValueOf(interface{}(instance)))
 
