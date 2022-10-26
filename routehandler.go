@@ -99,17 +99,31 @@ func (self *RouteHandler) callHandle(w http.ResponseWriter, r *http.Request, han
 	fields := reflect.New(paramt).Elem()
 	if len(*store.get) != 0 {
 		for name, t := range *store.get {
-			vals, found := r.URL.Query()[name]
+			var found bool
+			var vals []string
+			if t.IsArray {
+				vals, found = r.URL.Query()[name+"[]"]
+			}
+			if ! found {
+				vals, found = r.URL.Query()[name]
+			}
 			if ! found { continue }
-			self.setmainRouteHandlerField("GET_", &name, &vals, &fields, &t, handle.pt)
+			self.setmainRouteHandlerField("GET_", &name, &vals, &fields, &t.Value, handle.pt)
 		}
 	}
 	if len(*store.post) != 0 {
 		r.ParseForm();
 		for name, t := range *store.post {
-			vals, found := r.PostForm[name]
+			var found bool
+			var vals []string
+			if t.IsArray {
+				vals, found = r.PostForm[name+"[]"]
+			}
+			if ! found {
+				vals, found = r.PostForm[name]
+			}
 			if ! found { continue }
-			self.setmainRouteHandlerField("POST_", &name, &vals, &fields, &t, handle.pt)
+			self.setmainRouteHandlerField("POST_", &name, &vals, &fields, &t.Value, handle.pt)
 		}
 	}
 	method.Call([]reflect.Value{fields})

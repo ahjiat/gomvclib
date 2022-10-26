@@ -28,7 +28,10 @@ type direction struct {
 	masterTemplates map[string]*template.Template
 }
 
-type http_method map[string]string
+type http_method map[string] struct {
+	Value string
+	IsArray bool
+}
 
 func errorLog(str string, msg ...interface{}) {
 	fmt.Fprintf(os.Stderr, "ERROR => " + str + " ", msg...)
@@ -71,13 +74,15 @@ func retrieveMethodParams(icontroller *interface{}, methodName string) (http_met
 					if ok, _ := regexp.MatchString("^POST_[a-zA-Z]+[a-zA-Z0-9]+$", field.Name); ok {
 						key := field.Name[5:];
 						value := field.Type.String();
-						postHttps[key] = value
+						isArray := strings.Contains(value, "[]")
+						postHttps[key] = struct { Value string; IsArray bool } {value, isArray}
 						continue
 					}
 					if ok, _ := regexp.MatchString("^GET_[a-zA-Z]+[a-zA-Z0-9]+$", field.Name); ok {
 						key := field.Name[4:];
 						value := field.Type.String();
-						getHttps[key] = value
+						isArray := strings.Contains(value, "[]")
+						getHttps[key] = struct { Value string; IsArray bool } {value, isArray}
 						continue
 					}
 				}
