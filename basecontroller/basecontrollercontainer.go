@@ -143,13 +143,19 @@ func (self *BaseControllerContainer) GetUrlVar(s string) string {
 func (self *BaseControllerContainer) GetView(fileNames... string) string {
 	var fileName string
 	if len(fileNames) >= 1 { fileName =  fileNames[0] }
-	buff := self.getViewContent(fileName)
+	buff := self.getViewContent(fileName, false)
 	return buff.String()
+}
+func (self *BaseControllerContainer) ViewNoCache(fileNames... string) {
+	var fileName string
+	if len(fileNames) >= 1 { fileName =  fileNames[0] }
+	buff := self.getViewContent(fileName, true)
+	self.Response.Write(buff.Bytes())
 }
 func (self *BaseControllerContainer) View(fileNames... string) {
 	var fileName string
 	if len(fileNames) >= 1 { fileName =  fileNames[0] }
-	buff := self.getViewContent(fileName)
+	buff := self.getViewContent(fileName, false)
 	self.Response.Write(buff.Bytes())
 }
 func (self *BaseControllerContainer) MasterView(args... interface{}) {
@@ -207,12 +213,12 @@ func (self *BaseControllerContainer) ParseTemplate(inputData interface{}, conten
 	return output.String()
 }
 
-func (self *BaseControllerContainer) getViewContent(fileName string) bytes.Buffer {
+func (self *BaseControllerContainer) getViewContent(fileName string, noCache bool) bytes.Buffer {
 	var output bytes.Buffer
 	var tpl *template.Template
 	var ok bool
 	file, fileName := self.retriveAbsFile(fileName)
-	if tpl, ok = self.Templates[fileName]; ! ok {
+	if tpl, ok = self.Templates[fileName]; noCache || ! ok {
 		rawFile, err := os.ReadFile(file); if err != nil { panic(err) }
 		funcMap := template.FuncMap {
 			"LoadFile": func(file string) (string, error) {
