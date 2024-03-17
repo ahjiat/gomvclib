@@ -146,6 +146,12 @@ func (self *BaseControllerContainer) GetView(fileNames... string) string {
 	buff := self.getViewContent(fileName, false)
 	return buff.String()
 }
+func (self *BaseControllerContainer) GetViewNoCache(fileNames... string) string {
+	var fileName string
+	if len(fileNames) >= 1 { fileName =  fileNames[0] }
+	buff := self.getViewContent(fileName, true)
+	return buff.String()
+}
 func (self *BaseControllerContainer) ViewNoCache(fileNames... string) {
 	var fileName string
 	if len(fileNames) >= 1 { fileName =  fileNames[0] }
