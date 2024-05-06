@@ -49,13 +49,6 @@ func (self *BaseControllerContainerTemplate) defineTemplateCoreInternal(inputDat
 	var err error
 	file, fileName := self.retriveAbsFile(fileName)
 
-	if mt, ok = self.masterTemplates[fileName]; ! ok {
-		dat, err := os.ReadFile(file); if err != nil { panic(err) }
-		mt, err = template.New(fileName).Delims("@[", "]").Parse(string(dat)); if err != nil { panic(err) }
-		self.masterTemplates[fileName] = mt
-	}
-	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
-
 	funcMap := template.FuncMap {
 		"LoadFile": func(file string, datas ...interface{}) (string, error) {
 			var data interface{}
@@ -70,6 +63,13 @@ func (self *BaseControllerContainerTemplate) defineTemplateCoreInternal(inputDat
 		},
 	}
 	for k, f := range self.viewFuncMap { funcMap[k] = f }
+
+	if mt, ok = self.masterTemplates[fileName]; ! ok {
+		dat, err := os.ReadFile(file); if err != nil { panic(err) }
+		mt, err = template.New(fileName).Delims("@[", "]").Funcs(funcMap).Parse(string(dat)); if err != nil { panic(err) }
+		self.masterTemplates[fileName] = mt
+	}
+	err = mt.Execute(&output, inputData); if err != nil { panic(err) }
 	t, err := template.New("").Delims("@{", "}").Funcs(funcMap).Parse(output.String()); if err != nil { panic(err) }
 	err = t.Execute(&output2, mDat); if err != nil { panic(err) }
 
