@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 	"path/filepath"
+	"log"
 )
 
 type RouteConfig struct {
@@ -34,7 +35,7 @@ type http_method map[string] struct {
 }
 
 func errorLog(str string, msg ...interface{}) {
-	fmt.Fprintf(os.Stderr, "ERROR => " + str + " ", msg...)
+	log.Fatal(fmt.Sprintf("ERROR => " + str + " ", msg...))
 	os.Exit(1)
 }
 func listAllMethods(icontroller interface{}) []string {
